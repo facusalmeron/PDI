@@ -1,0 +1,12 @@
+cv::VideoCapture video("elvi.mp4");
+//cv::VideoCapture video(0); //Camara de la compu
+	double fps=video.get(CV_CAP_PROP_FPS);
+	
+	int delay=750/fps;
+	while (true)
+	{
+	cv::Mat frame;
+	video>>frame;
+	imshow("ALTO VIDEO", frame);
+	if (waitKey(delay)==27) break;
+	}

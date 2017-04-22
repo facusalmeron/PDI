@@ -1,0 +1,3 @@
+http://opencv.org/  --> Sitio Oficial
+http://docs.opencv.org/2.4/modules/refman.html --> Referencias
+https://github.com/pdifich --> Funciones Auxiliares
