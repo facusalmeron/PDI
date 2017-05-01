@@ -88,8 +88,105 @@ void Ejercicio1_2(Mat img){
 	waitKey();
 }
 
+void rotate(cv::Mat& src, double angle, cv::Mat& dst){ //Funcion para rotar una imagen.
+	cv::Point2f ptCp(src.cols*0.5, src.rows*0.5);
+	cv::Mat M = cv::getRotationMatrix2D(ptCp, angle, 1.0);
+	cv::warpAffine(src, dst, M, src.size(), cv::INTER_CUBIC); //Nearest is too rough, 
+}
+
+void Ejercicio1_3(){
+	Mat img(512,512,CV_32F);
+	line(img,Point(img.cols/2,0),Point(img.cols/2,img.rows),Scalar(1));
+	Mat roi1=img(Rect(img.cols/2-128,img.rows/2-128,256,256));
+	imshow("Imagen Original",roi1);
+	imshow("Espectro Img Original",spectrum(roi1));
+	rotate(img,20,img);
+	Mat roi2=img(Rect(img.cols/2-128,img.rows/2-128,256,256));
+	imshow("Imagen Rotada",roi2);
+	imshow("Espectro Img Rotada",spectrum(roi2));
+	waitKey(0);
+}
+
+void Ejercicio1_4(string nombre){
+	Mat img=imread(nombre,CV_LOAD_IMAGE_GRAYSCALE);
+	img.convertTo(img,CV_32F,1./255);
+	imshow("Original",img);
+	imshow("Magnitud",spectrum(img));
+	waitKey(0);
+}
+
+void Ejercicio2(string nombre,string pasa,int tipo,double D0,int orden){
+	Mat img=imread(nombre,CV_LOAD_IMAGE_GRAYSCALE);
+	img.convertTo(img,CV_32F,1./255);
+	int filas=img.rows;
+	int columnas=img.cols;
+	img=optimum_size(img); //Hago el rellenado
+	Mat filtro;
+	switch (tipo){
+	case 1:{
+		filtro=filter_ideal(img.rows,img.cols,D0); //filtro ideal
+		break;}
+	case 2:{
+		filtro=filter_butterworth(img.rows,img.cols,D0,orden); //filtro de Butterworth
+		break;}
+	case 3:{
+		filtro=filter_gaussian(img.rows,img.cols,D0); //Filtro Gaussiano
+		break;}
+	}
+	if (pasa=="Pasa Alto"){
+		filtro=1-filtro; //Si es pasa alto se invierte todo, ya que ahora lo que no se filtra es el circulo
+		//central que es donde estan las frecuencias bajas y se dejan pasar el resto que son las altas
+	}
+	Mat filtrada=filter(img,filtro);
+	filtrada=filtrada(Range(0,filas),Range(0,columnas));
+	img=img(Range(0,filas),Range(0,columnas));
+	imshow("Original",img);
+	imshow("Espectro Original",spectrum(img));
+	namedWindow("Imagen Filtrada",CV_WINDOW_KEEPRATIO);
+	imshow("Imagen Filtrada",filtrada);
+	imshow("Espectro filtro",spectrum(filtrada));
+	waitKey(0);
+}
+
+void Ejercicio3(float A, float a, float b){
+	Mat img=imread("camaleon.tif",CV_LOAD_IMAGE_GRAYSCALE);
+	img.convertTo(img,CV_32F,1./255);
+	int filas=img.rows;
+	int columnas=img.cols;
+	img=optimum_size(img);
+	//Filtrado de alta potencia (high boost)
+	Mat high_boost=filter_butterworth(img.rows,img.cols,50/255.0,2);
+	high_boost=1-high_boost;
+	high_boost=(A-1)+high_boost;
+	Mat filtrado_AltaPotencia=filter(img,high_boost);
+	filtrado_AltaPotencia=filtrado_AltaPotencia(Range(0,filas),Range(0,columnas));
+	img=img(Range(0,filas),Range(0,columnas));
+	
+	//Filtrado de Alta Frecuencia
+	img=optimum_size(img);
+	//Filtrado de alta potencia (high boost)
+	Mat enfasis=filter_butterworth(img.rows,img.cols,50/255.0,2);
+	enfasis=1-enfasis;
+	enfasis=a+b*enfasis;
+	Mat filtrado_AltaFrecuencia=filter(img,enfasis);
+	filtrado_AltaFrecuencia=filtrado_AltaFrecuencia(Range(0,filas),Range(0,columnas));
+	img=img(Range(0,filas),Range(0,columnas));
+	
+	imshow("Original",img);
+	imshow("Espectro Original",spectrum(img));
+	namedWindow("Filtrado de Alta Potencia",CV_WINDOW_KEEPRATIO);
+	imshow("Filtrado de Alta Potencia",filtrado_AltaPotencia);
+	imshow("Espectro Filtro Alta Potencia",spectrum(filtrado_AltaPotencia));
+	namedWindow("Filtrado de Alta Frecuencia",CV_WINDOW_KEEPRATIO);
+	imshow("Filtrado de Alta Frecuencia",filtrado_AltaFrecuencia);
+	imshow("Espectro Filtro Alta Frecuencia",spectrum(filtrado_AltaFrecuencia));
+	
+	waitKey(0);
+}
+
 int main(int argc, char** argv) {
 	//EJERCICIO 1:
+	//el espectro no cambia si se mueve la linea
 	//tipo 1: linea horizontal --> El espectro que obtengo es el de una linea vertical solamente
 	//si voy agregando mas lineas horizontales, a la unica linea vertical que obtengo en el espectro
 	//se le ve como un punteado. Si tuerzo un poquito la linea horizontal ahora obtengo un espectro
@@ -111,9 +208,38 @@ int main(int argc, char** argv) {
 
 	//tipo 5: circulo centrado --> Mientras menor sea el circulo (menor radio) obtengo en el espectro
 	//circulos coaxiales mas grandes y mas separados. A mayor radio circulos mas pequeños mas juntos.
-	Mat figura=Ejercicio1_1(5);
-	imshow("Ejercicio1_1",figura);
-	Ejercicio1_2(figura);
+	
+//	Mat figura=Ejercicio1_1(5);
+//	imshow("Ejercicio1_1",figura);
+	
+//	Ejercicio1_2(figura);
+	
+//	Ejercicio1_3(); //como se explico mas arriba, al rotar 20 grados el espectro tambien lo hace.
+	//Al tratarse de una linea vertical el espectro aparece horizontal y cuando lo roto 20 grados,
+	//tambien lo hace en el espectro
+	
+//	Ejercicio1_4("huang3.jpg"); //Si pruebo con la img de ejemplo de huang1 o huang 2 observamos que
+	//hay muchos componentes de baja frecuencia que son los que se encuentran en el centro del espectro.
+	//Mientras que si probamos con huang3 que tiene gran cantidad de bordes y por lo tanto muchas frecuencias
+	//podemos ver en el espectro que en el centro practicamente no hay nada y se visualizan las altas frecuencias.
+	
+	//EJERCICIO 2:
+//	Ejercicio2("huang3.jpg","Pasa Alto",3,25/255.0,5);
+//	TIPO 1 --> IDEAL: Primero en los pasa-bajos mientras menor sea el radio D0 mas borrosa sera la img, 
+	//y el fenomeno de Gibbs se puede ver por ejemplo cuando agrandamos la imagen filtrada y se ve que 
+	//las ondulaciones se ven repetidas.
+	//Ahora en los pasa-altos si el radio es mayor van quedando solamente los bordes de la imagen.
+	
+//	TIPO 2 --> BUTTERWORTH: En este caso probando con un mismo radio que el filtro ideal veo como se borronea
+	//la img pero no aparece el fenomeno de Gibbs, mientras que si incremento el orden, las ondulaciones
+	//en el filtro empiezan a aparecer. Cuando crece el orden n crece Gibbs. El radio en este caso solamente
+	//lo hace mas o menos borrosa a la img. Si el orden se incrementa el filtro se va pareciendo al 
+	//filtro ideal, mientras que si el orden es inferior se parece al filtro de Gauss.
+	
+//	TIPO 3 --> GAUSSIANO: El filtro gaussiano no presenta el fenomeno de Gibbs
+	
+	//EJERCICIO 3:
+	Ejercicio3(2.5,0,1);
 	
 	waitKey();
 	return 0;
