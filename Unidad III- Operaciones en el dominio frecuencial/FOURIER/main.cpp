@@ -214,24 +214,40 @@ void prueba(){
 	waitKey(0);
 }
 
-void Ejercicio4(double D0){
+void Ejercicio4(float yl, float yh, double D0){
 	Mat img=imread("reunion.tif",CV_LOAD_IMAGE_GRAYSCALE);
+	Mat ecualizada;
+	equalizeHist(img,ecualizada);
+	imshow("Original",img);
+	imshow("Original Ecualizada",ecualizada);
+
 	img.convertTo(img,CV_32F,1./255);
+	imshow("Spec Original",spectrum(img));
+	img=img+0.00001;
+	log(img,img);
 	int filas=img.rows;
 	int columnas=img.cols;
-	img=optimum_size(img); //Hago el rellenado
-	Mat salida;
-	log(img,salida);
-	Mat filtro=1-filter_butterworth(img.rows,img.cols,D0,2);
-	salida=filter(salida,filtro);
-	salida=salida(Range(0,filas),Range(0,columnas));
+	img=optimum_size(img);
+	Mat filtro;
+	filtro=(yh-yl)*(1-filter_gaussian(img.rows,img.cols,D0))+yl; 
+//	Mat espectro=spectrum(filtro);
+	Mat filtrada=filter(img,filtro);
+	filtrada=filtrada(Range(0,filas),Range(0,columnas));
 	img=img(Range(0,filas),Range(0,columnas));
-	exp(salida,salida);
-	imshow("Original",img);
-	imshow("Filtrado homomorfico",salida);
+	exp(filtrada,filtrada);
+	imshow("Filtro Homomorfico",filtrada);
+//	stats(filtrada);
+	imshow("Spec Filtrada",spectrum(filtrada));
+	normalize(filtrada,filtrada,0,255,CV_MINMAX);
+	filtrada.convertTo(filtrada,ecualizada.type());
+	equalizeHist(filtrada,filtrada);
+//	stats(filtrada);
 	
+	imshow("Homomorfico Ecualizado",filtrada);
+//	imshow("espectro",filtro);
 	waitKey(0);
 }
+
 
 int main(int argc, char** argv) {
 	//EJERCICIO 1:
@@ -291,8 +307,8 @@ int main(int argc, char** argv) {
 //	Ejercicio3(2.5,0,1);
 //	prueba();
 	
-	Ejercicio4(100/255.0);
-	
+	Ejercicio4(0.7,1.3,0.1);
+
 	waitKey();
 	return 0;
 } 
