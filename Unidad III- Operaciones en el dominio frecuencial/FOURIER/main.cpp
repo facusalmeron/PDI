@@ -183,6 +183,55 @@ void Ejercicio3(float A, float a, float b){
 	
 	waitKey(0);
 }
+void prueba(){
+	Mat img(512,512,CV_32F);
+	line(img,Point(img.cols/2,0),Point(img.cols/2,img.rows),Scalar(1));
+	Mat roi1=img(Rect(img.cols/2-128,img.rows/2-128,256,256));
+	imshow("Imagen Original",roi1);
+	imshow("Espectro Img Original",spectrum(roi1));
+	rotate(img,20,img);
+	Mat roi2=img(Rect(img.cols/2-128,img.rows/2-128,256,256));
+	imshow("Imagen Rotada",roi2);
+	Mat espectro=spectrum(roi2);
+	imshow("Espectro Img Rotada",spectrum(roi2));
+	Mat umbral(roi1.size(),roi1.type());
+	for(int i=0;i<umbral.rows;i++) { 
+		for(int j=0;j<umbral.cols;j++) { 
+			if (espectro.at<float>(i,j)> 220/255.0){
+				umbral.at<float>(i,j)=1;
+			}
+			else umbral.at<float>(i,j)=0;
+		}
+	}
+	int i=128;
+	while (umbral.at<float>(i,168)!=1){
+		i--;
+	}
+	double angulo=atan((128-i)/40.0)*180/M_PI;
+	cout<<angulo;
+	rotate(roi1,-angulo,roi1);
+	imshow("Espectro",roi1);
+	waitKey(0);
+}
+
+void Ejercicio4(double D0){
+	Mat img=imread("reunion.tif",CV_LOAD_IMAGE_GRAYSCALE);
+	img.convertTo(img,CV_32F,1./255);
+	int filas=img.rows;
+	int columnas=img.cols;
+	img=optimum_size(img); //Hago el rellenado
+	Mat salida;
+	log(img,salida);
+	Mat filtro=1-filter_butterworth(img.rows,img.cols,D0,2);
+	salida=filter(salida,filtro);
+	salida=salida(Range(0,filas),Range(0,columnas));
+	img=img(Range(0,filas),Range(0,columnas));
+	exp(salida,salida);
+	imshow("Original",img);
+	imshow("Filtrado homomorfico",salida);
+	
+	waitKey(0);
+}
 
 int main(int argc, char** argv) {
 	//EJERCICIO 1:
@@ -238,8 +287,11 @@ int main(int argc, char** argv) {
 	
 //	TIPO 3 --> GAUSSIANO: El filtro gaussiano no presenta el fenomeno de Gibbs
 	
-	//EJERCICIO 3:
-	Ejercicio3(2.5,0,1);
+//	EJERCICIO 3:
+//	Ejercicio3(2.5,0,1);
+//	prueba();
+	
+	Ejercicio4(100/255.0);
 	
 	waitKey();
 	return 0;
