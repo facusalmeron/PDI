@@ -139,7 +139,7 @@ float ECM(Mat img1,Mat img2){
 void Ejercicio2(){
 	Mat img=imread("sangre.jpg",CV_LOAD_IMAGE_GRAYSCALE);
 	Mat ruido=img.clone();
-	ruido=ruido_sal_pimienta(ruido,0.1,0.1); 
+	ruido=ruido_sal_pimienta(ruido,0.0,0.1); 
 	ruido=ruido_gaussiano(ruido,0,0.10*255);
 	Mat fmg=ruido.clone(); 
 	fmg=MediaGeometrica(fmg,3); //bueno para ruido sal, malo para ruido pimienta
@@ -155,13 +155,153 @@ void Ejercicio2(){
 	waitKey(0);
 }
 
+Mat OrdenMediana(Mat img,int tam){
+	img.convertTo(img,CV_32F,1./255);
+	Mat img2=img.clone();
+	int m=tam/2;
+	for(int i=m;i<img.rows-m;i++) { 
+		for(int j=m;j<img.cols-m;j++) { 
+			for(int tt=0;tt<3;tt++){
+				vector<float> aux;
+				for(int k=-m;k<=m;k++) { 
+					for(int l=-m;l<=m;l++) { 
+						aux.push_back(img.at<float>(i+k,j+l));
+					}
+				}
+				sort(aux.begin(),aux.end());
+				img2.at<float>(i,j)=aux[((tam*tam)/2)+1];
+			}
+		}
+	}
+		img=img2;
+	return img;
+}
+
+Mat OrdenPuntoMedio(Mat img,int tam){
+	img.convertTo(img,CV_32F,1./255);
+	Mat img2=img.clone();
+	int m=tam/2;
+	for(int i=m;i<img.rows-m;i++) { 
+		for(int j=m;j<img.cols-m;j++) { 
+			for(int tt=0;tt<3;tt++){
+				float aux1=0;
+				float aux2=1;
+				for(int k=-m;k<=m;k++) { 
+					for(int l=-m;l<=m;l++) { 
+						if(aux1<img.at<float>(i+k,j+l))
+							aux1=img.at<float>(i+k,j+l);
+						if(aux2>img.at<float>(i+k,j+l))
+							aux2=img.at<float>(i+k,j+l);
+					}
+				}
+				img2.at<float>(i,j)=(aux1+aux2)/2;
+			}
+		}
+		}
+		img=img2;
+	return img;
+}
+
+Mat OrdenMinimo(Mat img,int tam){
+	img.convertTo(img,CV_32F,1./255);	
+	Mat img2=img.clone();
+	int m=tam/2;
+	for(int i=m;i<img.rows-m;i++) { 
+		for(int j=m;j<img.cols-m;j++) { 
+			for(int tt=0;tt<3;tt++){
+				float aux=1;
+				for(int k=-m;k<=m;k++) { 
+					for(int l=-m;l<=m;l++) { 
+						if(aux>img.at<float>(i+k,j+l))
+							aux=img.at<float>(i+k,j+l);
+					}
+				}
+				img2.at<float>(i,j)=aux;
+			}
+		}
+	}
+	img=img2;
+	return img;
+}
+
+Mat OrdenMaximo(Mat img,int tam){
+	img.convertTo(img,CV_32F,1./255);
+	Mat img2=img.clone();
+	int m=tam/2;
+	for(int i=m;i<img.rows-m;i++) { 
+		for(int j=m;j<img.cols-m;j++) { 
+			for(int tt=0;tt<3;tt++){
+				float aux=0;
+				for(int k=-m;k<=m;k++) { 
+					for(int l=-m;l<=m;l++) { 
+						if(aux<img.at<float>(i+k,j+l))
+							aux=img.at<float>(i+k,j+l);
+					}
+				}
+				img2.at<float>(i,j)=aux;
+			}
+		}
+	}
+		img=img2;
+	return img;
+}
+Mat OrdenAlfaRecortado(Mat img,int tam,int d){
+	img.convertTo(img,CV_32F,1./255);
+	Mat img2=img.clone();
+	int m=tam/2;
+	for(int i=m;i<img.rows-m;i++) { 
+		for(int j=m;j<img.cols-m;j++) { 
+			for(int tt=0;tt<3;tt++){
+				vector<float> aux;
+				for(int k=-m;k<=m;k++) { 
+					for(int l=-m;l<=m;l++) { 
+						aux.push_back(img.at<float>(i+k,j+l));
+					}
+				}
+				sort(aux.begin(),aux.end());
+				aux.resize(aux.size()-d/2);
+				float aux2=0;
+				for(int k=d/2;k<aux.size();k++){ 
+					aux2+=aux[k];
+				}
+				img2.at<float>(i,j)=aux2/(tam*tam-d);
+			}
+		}
+	}
+	img=img2;
+	return img;
+}
+
+void Ejercicio3(){
+	Mat img=imread("huang1.jpg",CV_LOAD_IMAGE_GRAYSCALE);
+	Mat ruido=img.clone();
+	ruido=ruido_sal_pimienta(ruido,0.01,0.01);
+	Mat filtro_mediana=ruido.clone();
+	filtro_mediana=OrdenMediana(filtro_mediana,3);
+	Mat filtro_ptomedio=ruido.clone();
+	filtro_ptomedio=OrdenPuntoMedio(filtro_ptomedio,3);
+	Mat filtro_ordenmin=ruido.clone();
+	filtro_ordenmin=OrdenMinimo(filtro_ordenmin,3); //para ruido sal
+	Mat filtro_ordenmax=ruido.clone();
+	filtro_ordenmax=OrdenMaximo(filtro_ordenmax,3); //para ruido pimienta
+	Mat filtro_alfarecortado=ruido.clone();
+	filtro_alfarecortado=OrdenAlfaRecortado(filtro_alfarecortado,3,5); //para ruido pimienta
+	imshow("Original",img);
+	imshow("Ruido",ruido);
+	imshow("Filtro Mediana",filtro_mediana);
+	imshow("Filtro Punto Medio",filtro_ptomedio);
+	imshow("Filtro Orden Maximo",filtro_ordenmax);
+	imshow("Filtro Orden Minimo",filtro_ordenmin);
+	imshow("Filtro Orden Alfa Recortado",filtro_alfarecortado);
+	waitKey(0);
+}
 
 int main(int argc, char** argv) {
 //	Ejercicio1();
 
-	Ejercicio2();
+//	Ejercicio2();
 	
-	
+	Ejercicio3();
 	waitKey(0);
 	return 0;
 } 
