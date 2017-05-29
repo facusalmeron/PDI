@@ -17,6 +17,77 @@ using namespace cv;
 using namespace pdi;
 using namespace std;
 
+void onMouse( int event, int x, int y, int, void* );
+//
+Mat imagen = imread("HeadCT_degradada_spectrum.jpg");
+//imagen.converTo(imagen,CV_32F,1./255);
+//Mat imagen=spectrum(imagen1);
+//Mat imagen=aux(Rect(0,740,132,44));
+void onMouse( int event, int x, int y, int, void* )
+{
+	if( event != CV_EVENT_LBUTTONDOWN )
+		return;
+	
+	Point pt = Point(x,y);
+	cout<<"x="<<pt.x<<"\t y="<<pt.y;
+	Vec3b valores=imagen.at<cv::Vec3b>(y,x);
+	cout<<"\t B="<<(int)valores.val[0]<<" G="<<(int)valores.val[1]<<" R="<<(int)valores.val[2]<<endl;
+	
+}
+void Averiguar(){
+	//EJERCICIO 2.1
+	namedWindow("Averiguar Pixeles",CV_WINDOW_KEEPRATIO);
+	setMouseCallback( "Averiguar Pixeles", onMouse, 0 );
+	imshow("Averiguar Pixeles",imagen);
+	
+}
+
+//usados para recortar una imagen a partir de otra
+Rect cropRect(0, 0, 0, 0);
+Point P1(0, 0);
+Point P2(0, 0);
+
+void Mouse(int event, int x, int y, int flags, void* userdata) { 
+	int x_ini = 0; int y_ini = 0; int x_fin = 0; int y_fin = 0;
+	
+	switch (event) {
+	case CV_EVENT_LBUTTONDOWN:
+		P1.x = x;
+		P1.y = y;
+		P2.x = x;
+		P2.y = y;
+		cout << "Boton izquierdo presionado en las coord (x, y): " << x << " , " << y << endl;
+		break;
+	case CV_EVENT_LBUTTONUP:
+		P2.x = x;
+		P2.y = y;
+		cout << "Boton izquierdo liberado en las coord (x,y): " << x << " , " << y << endl;
+		break;
+	default: break;
+	}
+}
+void crop_mouse(string image) { //Funcion para armar un roi a traves de seleccion de ventana en imagen
+	//	Utilizo la funcion "Mouse" definida arriba. Solo recortar desde arriba-izq hacia abajo-derecha
+	Mat img = imread(image, 1);
+	namedWindow("ImageDisplay", 1);
+	setMouseCallback("ImageDisplay", Mouse, NULL);
+	imshow("ImageDisplay", img);
+	waitKey(10000);
+	
+	int ancho = P2.x - P1.x;
+	int alto = P2.y - P1.y;
+	Rect r_crop(P1.x, P1.y, ancho, alto);
+	cout << P1.x << ", " << P2.x << ", " << P1.y << ", " << P2.y << endl;
+	Mat img_crop = img(r_crop);
+	namedWindow("cropped", 1);
+	imshow("cropped", img_crop);
+	waitKey(0);
+	system("PAUSE");
+	
+}
+
+
+
 Mat ruido_sal_pimienta(Mat img, float pa, float pb ){   
 	//pa y pb cuantos de sal y cuantos de pimienta agrego.
 	RNG rng; // rand number generate
@@ -36,8 +107,8 @@ Mat ruido_sal_pimienta(Mat img, float pa, float pb ){
 
 Mat ruido_gaussiano(Mat img,double mean,double sigma){
 	Mat ruido = img.clone();
-//	img.convertTo(img,CV_32F,1./255);
-//	img.convertTo(ruido,CV_32F,1./255);
+	//	img.convertTo(img,CV_32F,1./255);
+	//	img.convertTo(ruido,CV_32F,1./255);
 	RNG rng;
 	rng.fill(ruido, RNG::NORMAL, mean,sigma); 
 	add(img, ruido, img);
@@ -76,7 +147,7 @@ void Ejercicio1(){
 	waitKey(0);
 }
 
-Mat MediaGeometrica(Mat img,int tam){
+Mat MediaGeometrica(Mat img,int tam){ //BUENO PARA RUIDO GAUSSIANO, MALO PARA IMPULSIVO
 	img.convertTo(img,CV_32F,1./255);
 	Mat img2=img.clone();
 	int m=tam/2;
@@ -97,7 +168,9 @@ Mat MediaGeometrica(Mat img,int tam){
 	return img;
 }
 
-Mat MediaContraArmonica(Mat img,int tam,float Q){
+//MEDIA ARMONICA BUENO PARA SAL, MALO PARA PIMIENTA, BUENO CON GAUSSIANO.
+Mat MediaContraArmonica(Mat img,int tam,float Q){ //BUENO PARA RUIDO SAL Y PIMIENTA Q>0 ELIMINA PIMIENTA, Q<0 ELIMINA SAL, 
+	//Q=0 MEDIA ARITMETICA, Q=-1 MEDIA ARMONICA
 	img.convertTo(img,CV_32F,1./255);
 	Mat img2=img.clone();
 	int m=tam/2;
@@ -136,6 +209,11 @@ float ECM(Mat img1,Mat img2){
 	return error;
 }
 
+//POSIBLE PREGUNTA DE PARCIAL, SACADA DEL FACU C.
+//Si tengo ruido impulsivo y gaussiano.. que sacamos primero? el impulsivo, pq si saco el gaussiano primero, 
+//me 'borronea' la sal y pimienta
+
+
 void Ejercicio2(){
 	Mat img=imread("sangre.jpg",CV_LOAD_IMAGE_GRAYSCALE);
 	Mat ruido=img.clone();
@@ -155,7 +233,7 @@ void Ejercicio2(){
 	waitKey(0);
 }
 
-Mat OrdenMediana(Mat img,int tam){
+Mat OrdenMediana(Mat img,int tam){ //BUENO PARA RUIDOS IMPULSIVOS SIN DESENFOQUE
 	img.convertTo(img,CV_32F,1./255);
 	Mat img2=img.clone();
 	int m=tam/2;
@@ -173,11 +251,11 @@ Mat OrdenMediana(Mat img,int tam){
 			}
 		}
 	}
-		img=img2;
+	img=img2;
 	return img;
 }
 
-Mat OrdenPuntoMedio(Mat img,int tam){
+Mat OrdenPuntoMedio(Mat img,int tam){ //UTIL PARA RUIDO GAUSSIANO O UNIFORME
 	img.convertTo(img,CV_32F,1./255);
 	Mat img2=img.clone();
 	int m=tam/2;
@@ -197,12 +275,12 @@ Mat OrdenPuntoMedio(Mat img,int tam){
 				img2.at<float>(i,j)=(aux1+aux2)/2;
 			}
 		}
-		}
-		img=img2;
+	}
+	img=img2;
 	return img;
 }
 
-Mat OrdenMinimo(Mat img,int tam){
+Mat OrdenMinimo(Mat img,int tam){ //UTIL PARA RUIDO TIPO SAL
 	img.convertTo(img,CV_32F,1./255);	
 	Mat img2=img.clone();
 	int m=tam/2;
@@ -224,7 +302,7 @@ Mat OrdenMinimo(Mat img,int tam){
 	return img;
 }
 
-Mat OrdenMaximo(Mat img,int tam){
+Mat OrdenMaximo(Mat img,int tam){ //UTIL PARA RUIDO TIPO PIMIENTA
 	img.convertTo(img,CV_32F,1./255);
 	Mat img2=img.clone();
 	int m=tam/2;
@@ -242,10 +320,10 @@ Mat OrdenMaximo(Mat img,int tam){
 			}
 		}
 	}
-		img=img2;
+	img=img2;
 	return img;
 }
-Mat OrdenAlfaRecortado(Mat img,int tam,int d){
+Mat OrdenAlfaRecortado(Mat img,int tam,int d){ //UTIL PARA COMBINACIONES DE GAUSSIANO Y SAL & PIMIENTA.
 	img.convertTo(img,CV_32F,1./255);
 	Mat img2=img.clone();
 	int m=tam/2;
@@ -296,12 +374,191 @@ void Ejercicio3(){
 	waitKey(0);
 }
 
+Mat filtro_notch_ideal(int rows,int cols,int _x,int _y,double corte){
+	Mat magnitud = Mat::zeros(rows, cols, CV_32F);
+	circle(
+		   magnitud,
+		   Point(cols/2 + _y,rows/2 + _x), //punto central
+		   rows*corte, //radio
+		   cv::Scalar::all(1),
+		   -1 //círculo relleno
+		   );
+	circle(
+		   magnitud,
+		   cv::Point(cols/2 - _y,rows/2 - _x), //punto central
+		   rows*corte, //radio
+		   cv::Scalar::all(1),
+		   -1 //círculo relleno
+		   );
+	magnitud = 1 - magnitud;
+	return magnitud;
+}
+
+Mat filtro_notch_butterworth(int rows,int cols,int _x,int _y,double corte,int order){
+	Mat	magnitud = Mat::zeros(rows,cols,CV_32F);
+	corte *= rows;
+	for(size_t K=0; K<rows; ++K){
+		for(size_t L=0; L<cols; ++L){
+			double d2 = distance2(K+.5, L+.5, rows/2. + _x, cols/2. + _y);
+			magnitud.at<float>(K,L) = 1.0/(1 + std::pow(((corte*corte)*(corte*corte))/(d2*d2), order) );
+			d2 = distance2(K+.5, L+.5, rows/2. - _x, cols/2. - _y);
+			magnitud.at<float>(K,L) += 1.0/(1 + std::pow(((corte*corte)*(corte*corte))/(d2*d2), order) ) - 1;
+		}
+	}
+	return magnitud;
+}
+
+Mat filtro_notch_gaussiano(int rows,int cols,int _x,int _y,double corte){
+	Mat	magnitud = Mat::zeros(rows, cols, CV_32F);
+	corte *= rows;
+	for(size_t K=0; K<rows; ++K)
+		for(size_t L=0; L<cols; ++L){
+		double distance = distance2(K+.5, L+.5, rows/2. + _x, cols/2. + _y);
+		magnitud.at<float>(K,L) = 1 - exp(-(distance*distance)/(2*(corte*corte)*(corte*corte)));
+		distance = distance2(K+.5, L+.5, rows/2. - _x, cols/2. - _y);
+		magnitud.at<float>(K,L) += 1 - exp(-(distance*distance)/(2*(corte*corte)*(corte*corte))) - 1;
+	}
+		return magnitud;
+}
+
+vector <int> Obtener_Frecuencias(Mat img){
+	vector <int> frecuencias;
+	Mat transformada=spectrum(img);
+	//Esto lo hago para seber donde estan los puntos blancos en el espectro
+	for(int i=0;i<img.rows;i++){
+		for(int j=0;j<img.cols;j++){
+			if(transformada.at<float>(i,j) > 200.0/255.0){
+				transformada.at<float>(i,j) = 0;
+				cout<<i<<"-"<<j<<endl;
+				frecuencias.push_back(i);
+				frecuencias.push_back(j);
+				
+				//38-58
+				//218-198
+			}
+		}
+	}
+	return frecuencias;
+}
+
+void Ejercicio4(){
+	Mat img = imread("img_degradada.tif",CV_LOAD_IMAGE_GRAYSCALE);
+	img.convertTo(img,CV_32F,1./255);
+	Mat img_sr = imread("img.tif",CV_LOAD_IMAGE_GRAYSCALE);
+	img_sr.convertTo(img_sr,CV_32F,1./255);
+	imshow("Imagen Sin Ruido",img_sr);
+	imshow("Imagen Con Ruido",img);
+	Mat transformada(img.size(),img.type());
+	transformada = spectrum(img);
+	imshow("Espectro Sin Ruido",spectrum(img_sr));
+	imshow("Espectro Con Ruido",transformada);
+	//	imshow("Espectro Fourier",transformada);
+	
+	//Esto lo hago para seber donde estan los puntos blancos en el espectro
+	//	for(int i=0;i<img.rows;i++){
+	//		for(int j=0;j<img.cols;j++){
+	//			if(transformada.at<float>(i,j) > 200.0/255.0){
+	//				transformada.at<float>(i,j) = 0;
+	//				cout<<i<<"-"<<j<<endl;
+	//				//38-58
+	//				//218-198
+	//			}
+	//		}
+	//	}
+	//	imshow("Imagen Original 2",transformada);
+	
+	//Imagen Filtrada con un filtro notch ideal
+	Mat notch = filtro_notch_ideal(img.rows,img.cols,38,58,0.1);
+//	imshow("Filtro Notch Ideal",notch);
+	Mat filtrada_ideal = filter(img,notch);
+//	filtrada_ideal = filtrada_ideal(Range(0,img.rows),Range(0,img.cols));
+	imshow("Notch Ideal",filtrada_ideal);
+	imshow("Espectro Ideal",spectrum(filtrada_ideal));
+	
+	//Imagen Filtrada con un filtro notch butterworth
+	Mat butter = filtro_notch_butterworth(img.rows,img.cols,38,58,0.1,5);
+	//	imshow("Filtro Notch Butterworth",butter);
+	Mat filtrada_butt = filter(img,butter);
+//	filtrada_butt = filtrada_butt(Range(0,img.rows),Range(0,img.cols));
+	imshow("Notch Butt",filtrada_butt);
+	imshow("Espectro Butt",spectrum(filtrada_butt));
+	
+	//Imagen Filtrada con un filtro notch butterworth
+	Mat gaussiano = filtro_notch_gaussiano(img.rows,img.cols,38,58,0.1);
+	//	imshow("Filtro Notch Butterworth",gaussiano);
+	Mat filtrada_gauss = filter(img,gaussiano);
+//	filtrada_gauss = filtrada_gauss(Range(0,img.rows),Range(0,img.cols));
+	imshow("Notch Gauss",filtrada_gauss);
+	imshow("Espectro Gauss",spectrum(filtrada_gauss));
+	
+
+	
+	cout<<"El ECM entre la imagen original y el ruido es                      : "<<ECM(img_sr,img)<<endl;
+	cout<<"El ECM entre la imagen original y filtrada por Notch Ideal es      : "<<ECM(img_sr,filtrada_ideal)<<endl;
+	cout<<"El ECM entre la imagen original y filtrada por Notch Butterworth es: "<<ECM(img_sr,filtrada_butt)<<endl;
+	cout<<"El ECM entre la imagen original y filtrada por Notch Gaussiano es  : "<<ECM(img_sr,filtrada_gauss)<<endl;
+	waitKey(0);
+};
+
+void Ejercicio4_7(){
+	Mat img1=imread("noisy_moon.jpg",CV_LOAD_IMAGE_GRAYSCALE);
+	Mat img2=imread("HeadCT_degradada.tif",CV_LOAD_IMAGE_GRAYSCALE);
+	img1.convertTo(img1,CV_32F,1./255);
+	img2.convertTo(img2,CV_32F,1./255);
+	imshow("Luna Original",img1);
+	imshow("Head Original",img2);
+//	namedWindow("Espectro Luna",CV_WINDOW_KEEPRATIO);
+//	namedWindow("Espectro Head",CV_WINDOW_KEEPRATIO);
+	imshow("Espectro Luna",spectrum(img1));
+	imshow("Espectro Head",spectrum(img2));
+	Mat f=filtro_notch_ideal(img1.rows,img1.cols,84,167,0.1);
+	f=filter(img1,f);
+	Mat f1=filtro_notch_ideal(f.rows,f.cols,167,84,0.1);
+	f1=filter(f,f1);
+	imshow("Filtro Luna",f1);
+	namedWindow("Espectro Luna",CV_WINDOW_KEEPRATIO);
+	imshow("Espectro Luna",spectrum(f1));
+	
+	
+	Mat filtro=filtro_notch_ideal(img2.rows,img2.cols,216,216,0.01);
+	filtro=filter(img2,filtro);
+	Mat filtro2=filtro_notch_ideal(filtro.rows,filtro.cols,236,256,0.01);
+	filtro2=filter(filtro,filtro2);
+	Mat filtro3=filtro_notch_ideal(filtro2.rows,filtro2.cols,256,246,0.01);
+	filtro3=filter(filtro2,filtro3);
+	imshow("Filtro",filtro3);
+	namedWindow("Espectro",CV_WINDOW_KEEPRATIO);
+	imshow("Espectro",spectrum(filtro3));
+	waitKey(0);
+}
+
+void Ejercicio5(){
+	Mat img=imread("huang3_movida.tif",CV_LOAD_IMAGE_GRAYSCALE);
+	img.convertTo(img,CV_32FC(2));
+	imshow("Original",img);
+	imshow("Espectro",spectrum(img));
+	Mat filtro=motion_blur(img.size(),0.10,0.10);
+	Mat transformada=spectrum(img);
+	filtro=convolve(transformada,filtro);
+	imshow("Filtrada",filtro);
+	imshow("Espectro Filtrada",spectrum(filtro));
+	waitKey(0);
+}
+
 int main(int argc, char** argv) {
 //	Ejercicio1();
 
 //	Ejercicio2();
 	
-	Ejercicio3();
+//	Ejercicio3();
+	
+//	Ejercicio4();
+	
+//	Ejercicio4_7();
+	
+	Ejercicio5();
+	
+//	Averiguar();
 	waitKey(0);
 	return 0;
 } 
