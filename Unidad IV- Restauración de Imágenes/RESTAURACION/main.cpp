@@ -468,15 +468,24 @@ void Ejercicio4(){
 	//	imshow("Imagen Original 2",transformada);
 	
 	//Imagen Filtrada con un filtro notch ideal
-	Mat notch = filtro_notch_ideal(img.rows,img.cols,38,58,0.1);
+	Mat notch = filtro_notch_ideal(img.rows,img.cols,38,58,0.08);
+	
 //	imshow("Filtro Notch Ideal",notch);
 	Mat filtrada_ideal = filter(img,notch);
+	Mat ruido=1-notch;
+	Mat filtradaruido=filter(img,ruido);
+	imshow("Ruido ideal",filtradaruido);
+	imshow("Espectro ruido ideal",spectrum(filtradaruido));
 //	filtrada_ideal = filtrada_ideal(Range(0,img.rows),Range(0,img.cols));
 	imshow("Notch Ideal",filtrada_ideal);
 	imshow("Espectro Ideal",spectrum(filtrada_ideal));
 	
 	//Imagen Filtrada con un filtro notch butterworth
 	Mat butter = filtro_notch_butterworth(img.rows,img.cols,38,58,0.1,5);
+	Mat ruidob=1-butter;
+	Mat filtradaruidob=filter(img,ruidob);
+	imshow("Ruido butt",filtradaruidob);
+	imshow("Espectro ruido butt",spectrum(filtradaruido));
 	//	imshow("Filtro Notch Butterworth",butter);
 	Mat filtrada_butt = filter(img,butter);
 //	filtrada_butt = filtrada_butt(Range(0,img.rows),Range(0,img.cols));
@@ -485,6 +494,10 @@ void Ejercicio4(){
 	
 	//Imagen Filtrada con un filtro notch butterworth
 	Mat gaussiano = filtro_notch_gaussiano(img.rows,img.cols,38,58,0.1);
+	Mat ruidog=1-gaussiano;
+	Mat filtradaruidog=filter(img,ruidog);
+	imshow("Ruido Gauss",filtradaruidog);
+	imshow("Espectro ruido Gauss",spectrum(filtradaruidog));
 	//	imshow("Filtro Notch Butterworth",gaussiano);
 	Mat filtrada_gauss = filter(img,gaussiano);
 //	filtrada_gauss = filtrada_gauss(Range(0,img.rows),Range(0,img.cols));
@@ -552,11 +565,11 @@ int main(int argc, char** argv) {
 	
 //	Ejercicio3();
 	
-//	Ejercicio4();
+	Ejercicio4();
 	
 //	Ejercicio4_7();
 	
-	Ejercicio5();
+//	Ejercicio5();
 	
 //	Averiguar();
 	waitKey(0);
