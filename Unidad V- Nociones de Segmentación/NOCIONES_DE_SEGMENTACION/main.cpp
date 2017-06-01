@@ -334,7 +334,7 @@ void Ejercicio4(){
 //	inRange(img,Scalar(170,0,0),Scalar(176,255,255),mascara);
 	
 	//Aplico filtro a la mascara para sacar los puntitos que aparecen que no son de rosas
-	Mat kernel=filtro_promediador(5);
+	Mat kernel=filtro_promediador(9);
 	mascara=convolve(mascara,kernel);
 	for (int i=0;i<mascara.rows;i++){
 		for (int j=0;j<mascara.cols;j++){
@@ -351,6 +351,7 @@ void Ejercicio4(){
 //	imshow("ROI",roi);
 	namedWindow("Histograma H",CV_WINDOW_KEEPRATIO);
 	imshow("Histograma H",canvasH);
+	namedWindow("Mascara",CV_WINDOW_KEEPRATIO);
 	imshow("Mascara",mascara);
 	namedWindow("Segmentacion HSV",CV_WINDOW_KEEPRATIO);
 	imshow("Segmentacion HSV",segmentacion);
@@ -449,13 +450,13 @@ int main(int argc, char** argv) {
 
 //	Ejercicio2_1();
 	
-//	Ejercicio2_2();
+	Ejercicio2_2();
 	
 //	Ejercicio3();
 	
 //	Ejercicio4();
 	
-	Ejercicio5();
+//	Ejercicio5();
 	waitKey(0);
 	return 0;
 } 
