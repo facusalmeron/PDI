@@ -13,6 +13,8 @@
 #include <iterator>
 #include <opencv2/core/types.hpp>
 #include <opencv2/core/matx.hpp>
+#include <opencv2/imgproc.hpp>
+#include <ctime>
 
 
 using namespace cv;
@@ -145,6 +147,58 @@ void Ejercicio2_1(){
 	imshow("Gradiente",Solucion[0]);
 	imshow("Acumulador",Solucion[1]);
 	imshow("Resultado",Solucion[2]);
+	waitKey(0);
+}
+
+void Ejercicio2_2(){
+	Mat img=imread("snowman.png",CV_LOAD_IMAGE_GRAYSCALE);
+	Mat Gradiente, Gradiente2;
+	Canny(img,Gradiente,50,200,3); //Detecto los bordes de la imagen
+	Canny(img,Gradiente2,50,200,3); //Detecto los bordes de la imagen
+	imshow("Original",img);
+	imshow("Bordes",Gradiente);
+	
+	Mat transformada;
+	cvtColor(Gradiente, transformada, CV_GRAY2BGR);
+	vector<Vec2f> lines;
+	//HoughLines parámetros:
+	//1º Salida del detector del borde.
+	//2º Vector que almacenara los parametros ro, theta de las lineas detectadas.
+	//3º La resolucion de ro en pixeles, usamos 1 pixel
+	//4º La resolucion del parametro theta en radianes utilizamos un grado (CV_PI/180)
+	//5º Umbral numero minimo de intersecciones para detectar una linea, a mayor umbral lineas mas largas.
+	//6º y 7º parametros por defecto en 0
+//	HoughLines(Gradiente, lines, 1, CV_PI/180, 50, 0, 0 ); //Parametros para "letras1.tif"
+	HoughLines(Gradiente, lines, 1, CV_PI/180, 80, 0, 0 ); //Parametros para "snowman.png"
+	cout<<lines.size();
+	for( size_t i = 0; i < lines.size(); i++ )
+	{
+		float ro = lines[i][0], theta = lines[i][1];
+		Point pt1, pt2;
+		double a = cos(theta), b = sin(theta);
+		double x0 = a*ro, y0 = b*ro;
+		pt1.x = cvRound(x0 + 1000*(-b));
+		pt1.y = cvRound(y0 + 1000*(a));
+		pt2.x = cvRound(x0 - 1000*(-b));
+		pt2.y = cvRound(y0 - 1000*(a));
+		line( transformada, pt1, pt2, Scalar(0,0,255), 3, CV_AA);
+	}
+	imshow("Transformada Hough", transformada);
+	//HoughLinesP me da como salida los extremos de las lineas detectadas. (x0,y0),(x1,y1).
+	vector <Vec4i> lines2;
+//	HoughLinesP(Gradiente2,lines2,1,CV_PI/180, 30, 15, 10  ); //Parametros para "letras1.tif"
+	HoughLinesP(Gradiente2,lines2,1,CV_PI/180, 50, 30, 10  ); //Parametros para "snowman.png"
+	Mat transformadaP;
+	cvtColor(Gradiente2, transformadaP, CV_GRAY2BGR);
+	//Los parametros son los mismos, pero los ultimos dos son:
+	//* El numero minimo de puntos que se puede formar una linea, las lineas con menos de estos puntos no se tienen en cuenta
+	//* Separacion maxima entre dos puntos a considerar en la misma recta
+	for(size_t i=0; i<lines2.size(); i++) 
+	{ 
+		Vec4i  l=lines2[i];
+		line(transformadaP ,Point(l[0],l[1]), Point(l[2], l[3]), Scalar(0,0,255), 3, CV_AA); 
+	}
+	imshow("Transformada HoughP",transformadaP);
 	waitKey(0);
 }
 
@@ -300,8 +354,88 @@ void Ejercicio4(){
 	imshow("Mascara",mascara);
 	namedWindow("Segmentacion HSV",CV_WINDOW_KEEPRATIO);
 	imshow("Segmentacion HSV",segmentacion);
+	//EJERCICIO 4.3 CONTAR LAS ROSAS
+	//Parametros findCountours:
+	//1º Imagen Origen
+	//2º Contornos detectados se almacenan en un arreglo MAT destino.
+	//3º Hierarchy (jerarquia) informacion sobre la topologia de la imagen, tiene tantos elementos como numeros de contornos.
+	//4º Modo de recuperacion del contorno.CV_RETR_TREE
+	//5º Metodo de aproximacion CV_CHAIN_APPROX_SIMPLE
+	//6º Punto (opcional) por el que se desplaza cada punto del contorno. Util si los contornos se extraen de la ROI de img y
+	//luego se debe analizar en el contexto de toda la img.
+	vector<vector<Point> > contornos;
+	vector<Vec4i> hierarchy;
+	findContours(mascara, contornos, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+	cout<<"El numero total de rosas es de: "<<hierarchy.size()<<endl;
+	
+	//EJERCICIO4.4
+	vector <Point> Dibujar;
+	for(int i=0;i<contornos.size();i++) { 
+		vector <Point> aux;
+		aux=contornos[i];
+		int promediox=0;
+		int promedioy=0;
+		for(int j=0;j<aux.size();j++) { 
+			promediox+=aux[j].x;
+			promedioy+=aux[j].y;
+		}
+		promediox/=aux.size();
+		promedioy/=aux.size();
+		Dibujar.push_back(Point(promediox,promedioy));
+	}
+	Mat dibujo=img.clone();
+	int radio, B, G, R;
+	srand (time(NULL));
+	for(int i=0;i<Dibujar.size();i++) { 
+		radio=10+rand()%10;
+		B=rand()%256;
+		G=rand()%256;
+		R=rand()%256;
+		circle(dibujo,Dibujar[i],radio,Scalar(B,G,R),-1,8,0);
+	}
+	imshow("Ejercicio 4.4",dibujo);
+//	Mat dibujar = Mat::zeros( img.size(), CV_8UC1 );
+//	for( int i = 0; i< contornos.size(); i++ )
+//	{
+//		Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
+//		drawContours( dibujar, contornos, i, color, -1, 8, hierarchy, 0, Point() );
+//	}
+//	int cantidadcontornos = contornos.size();
+//	cout<<"El numero total de rosas posta es de: "<<cantidadcontornos;
+//	imshow("Dibujar: ",dibujar);
 	waitKey(0);
 	
+}
+
+Mat OrdenMediana(Mat img,int tam){ //BUENO PARA RUIDOS IMPULSIVOS SIN DESENFOQUE
+	img.convertTo(img,CV_32F,1./255);
+	Mat img2=img.clone();
+	int m=tam/2;
+	for(int i=m;i<img.rows-m;i++) { 
+		for(int j=m;j<img.cols-m;j++) { 
+			for(int tt=0;tt<3;tt++){
+				vector<float> aux;
+				for(int k=-m;k<=m;k++) { 
+					for(int l=-m;l<=m;l++) { 
+						aux.push_back(img.at<float>(i+k,j+l));
+					}
+				}
+				sort(aux.begin(),aux.end());
+				img2.at<float>(i,j)=aux[((tam*tam)/2)+1];
+			}
+		}
+	}
+	img=img2;
+	return img;
+}
+
+void Ejercicio5(){
+	Mat img=imread("iguazu_ruidogris.jpg");
+	
+	Mat filtrada=OrdenMediana(img,5);
+	imshow("Original",img);
+	imshow("Limpia",filtrada);
+	waitKey(0);
 }
 
 int main(int argc, char** argv) {
@@ -315,9 +449,13 @@ int main(int argc, char** argv) {
 
 //	Ejercicio2_1();
 	
+//	Ejercicio2_2();
+	
 //	Ejercicio3();
 	
-	Ejercicio4();
+//	Ejercicio4();
+	
+	Ejercicio5();
 	waitKey(0);
 	return 0;
 } 

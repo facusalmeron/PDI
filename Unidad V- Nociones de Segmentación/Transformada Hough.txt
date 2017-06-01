@@ -1,0 +1,15 @@
+La transformada Hough es una transformada que se utiliza para detectar lineas rectas.
+En el espacio de la imagen una linea se puede expresar con dos variables:
+	*el sistema en coordenadas cartesianas
+	*el sistema en coordenadas polares (ro,theta).
+Para la transformada de hough se expresa en el sistema polar: quedando la ecuacion como:
+	ro=Xcos(theta)+Ysin(theta).
+En general para cada punto (x0,y0) podemos definir la familia de lineas que pasan por ahi:
+	ro=x0cos(theta)+x0sin(theta).
+lo que significa que para cada par ro y theta representa cada linea que pasa por x0,y0.
+Si para un determinado x0,y0 representamos graficamente la familia de lineas que va a traves de ella se obtiene una sinusoide,
+donde el ro>0 y 0<theta<2PI
+La misma operacion se puede realizar para todos los puntos de una imagen. Si la curva de dos puntos distintos se cruzan
+en el plano ro-theta significa que dos puntos pertenecen a una misma linea.
+Por lo tanto una linea puede ser detectada por encontrar el numero de intersecciones entre las curvas de la transformada hough.
+podemos definir un umbral minimo de cruces para detectar una linea, cuanto mayor sea el umbral mayor sera la curva (mas puntos pertenecen).
