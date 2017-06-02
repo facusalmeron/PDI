@@ -545,16 +545,53 @@ void Ejercicio4_7(){
 	waitKey(0);
 }
 
+Mat filter_imaginario(cv::Mat image, cv::Mat filtro_magnitud){
+	//se asume imágenes de 32F y un canal, con tamaño óptimo
+	cv::Mat transformada;
+	
+	//como la fase es 0 la conversión de polar a cartesiano es directa (magnitud->x, fase->y)
+//	cv::Mat x[2];
+//	x[0] = filtro_magnitud.clone();
+//	x[1] = cv::Mat::zeros(filtro_magnitud.size(), CV_32F);
+//	
+//	cv::Mat filtro;
+//	cv::merge(x, 2, filtro);
+	
+	cv::dft(image, transformada, cv::DFT_COMPLEX_OUTPUT);
+	cv::mulSpectrums(transformada, filtro_magnitud, transformada, cv::DFT_ROWS);
+	
+	cv::Mat result;
+	cv::idft(transformada, result, cv::DFT_REAL_OUTPUT | cv::DFT_SCALE);
+	return result;
+}
+
 void Ejercicio5(){
 	Mat img=imread("huang3_movida.tif",CV_LOAD_IMAGE_GRAYSCALE);
-	img.convertTo(img,CV_32FC(2));
+	img.convertTo(img,CV_32F,1./255);
 	imshow("Original",img);
 	imshow("Espectro",spectrum(img));
-	Mat filtro=motion_blur(img.size(),0.10,0.10);
-	Mat transformada=spectrum(img);
-	filtro=convolve(transformada,filtro);
+	Mat filtro=motion_blur(img.size(),-1,0); //Falta encontrar el valor correcto de a o b
+	filtro=filter_imaginario(img,filtro);
 	imshow("Filtrada",filtro);
 	imshow("Espectro Filtrada",spectrum(filtro));
+	waitKey(0);
+}
+
+Ejercicio6(){
+	Mat img1=imread("FAMILIA_a.jpg",CV_LOAD_IMAGE_GRAYSCALE); //tiene ruido gaussiano
+	Mat img2=imread("FAMILIA_b.jpg",CV_LOAD_IMAGE_GRAYSCALE);
+	Mat img3=imread("FAMILIA_c.jpg",CV_LOAD_IMAGE_GRAYSCALE); //tiene ruido sal y pimienta
+
+	Mat filtro3=OrdenMediana(img3,5);
+	
+	namedWindow("Original 1",CV_WINDOW_KEEPRATIO);
+	namedWindow("Original 2",CV_WINDOW_KEEPRATIO);
+	namedWindow("Original 3",CV_WINDOW_KEEPRATIO);
+	namedWindow("Filtrada 3",CV_WINDOW_KEEPRATIO);
+	imshow("Original 1",img1);
+	imshow("Original 2",img2);
+	imshow("Original 3",img3);
+	imshow("Filtrada 3",filtro3);
 	waitKey(0);
 }
 
@@ -565,11 +602,13 @@ int main(int argc, char** argv) {
 	
 //	Ejercicio3();
 	
-	Ejercicio4();
+//	Ejercicio4();
 	
 //	Ejercicio4_7();
 	
-//	Ejercicio5();
+	Ejercicio5();
+	
+//	Ejercicio6();
 	
 //	Averiguar();
 	waitKey(0);
