@@ -332,21 +332,134 @@ Mat CrecimientoRegiones(Mat img,int x,int y){ //Recibe la imagen a segmentar y u
 	return img;
 }
 
+float Media(Mat img){
+	float media=0;
+	for(int i=0;i<img.rows;i++) { 
+		for(int j=0;j<img.cols;j++) { 
+			media+=img.at<uchar>(i,j);
+		}
+	}
+	media/=(img.rows*img.cols);
+	return media;
+}
+
+float Desvio(Mat img, int Media){
+	float desvio=0;
+	for(int i=0;i<img.rows;i++) { 
+		for(int j=0;j<img.cols;j++) { 
+			desvio+=pow(img.at<uchar>(i,j)-Media,2);
+		}
+	}
+	desvio/=(img.rows*img.cols);
+	desvio=sqrt(desvio);
+	return desvio*10;
+}
+
 void Ejercicio3_6(){
-	Mat img = imread("Rio.jpeg",CV_LOAD_IMAGE_GRAYSCALE);
-	//OBTENGO LAS COORDENADAS X e Y DE DONDE HICE CLICK PARA PLANTAR LA SEMILLA.
-	cantclick = 1;
-	namedWindow("My Window",WINDOW_NORMAL);
+	Mat img=imread("Rio.jpeg");
+	//Haciendo 4 clicks obtengo los puntos para los dos ROI que quiero armar, uno el celeste del rio y otro del gris de afluentes
+	cantclick=4;
+	namedWindow("My Window",CV_WINDOW_KEEPRATIO);
 	imshow("My Window",img);
-	//Despues de llamar a Click, en el vector xy tengo guardadas las coordenadas donde hice click
 	setMouseCallback("My Window", Click, NULL);
 	waitKey(0);
-	imshow("Original",img);
 	
-	//HAGO EL CRECIMIENTO A PARTIR DE DONDE HICE CLICK
-	Mat resultado = CrecimientoRegiones(img,xy[0].x,xy[0].y);
-	imshow("Resultado",resultado);
+	Mat roi=img(Rect(xy[0].x,xy[0].y,xy[1].x-xy[0].x,xy[1].y-xy[0].y));
+	Mat roi2=img(Rect(xy[2].x,xy[2].y,xy[3].x-xy[2].x,xy[3].y-xy[2].y));
+	
+	cvtColor(roi,roi,CV_BGR2HSV); //Convierto a HSV
+	cvtColor(roi2,roi2,CV_BGR2HSV); //Convierto a HSV
+	vector <Mat> hsv; 	
+	vector <Mat> hsv2; 	
+	split(roi, hsv);
+	split(roi2, hsv2);
+
+	Mat canvasH(200,400,CV_32F);
+	Mat canvasH2(200,400,CV_32F);
+	Mat histoH=histogram(hsv[0],256,Mat());
+	Mat histoH2=histogram(hsv2[0],256,Mat());
+	normalize(histoH,histoH,0,1,CV_MINMAX);
+	normalize(histoH2,histoH2,0,1,CV_MINMAX);
+	draw_graph(canvasH,histoH);
+	draw_graph(canvasH2,histoH2);
+	//	stats(hsv[0]);
+	
+	//Realizo la umbralizacion.
+	Mat mascara;
+	Mat segmentacion= Mat::zeros(img.size(), img.type());    
+	cvtColor(img,img,CV_BGR2HSV);
+	cvtColor(roi,roi,CV_HSV2BGR);
+	cvtColor(roi2,roi2,CV_HSV2BGR);
+	//	Mat mean, std;
+	//	meanStdDev(hsv[0], mean, std);
+	float media=Media(hsv[0]);
+	float desvio=Desvio(hsv[0],media);
+	float media2=Media(hsv2[0]);
+	float desvio2=Desvio(hsv2[0],media2);
+	cout<<"Media: "<<media<<endl<<"Desvio: "<<desvio<<endl;
+	cout<<"Media: "<<media2<<endl<<"Desvio: "<<desvio2<<endl;
+	
+	//	cout<<desvio;
+	inRange(img,Scalar(media-desvio,0,0),Scalar(media+desvio,255,255),mascara);
+	inRange(img,Scalar(media2-desvio2,0,0),Scalar(media2+desvio2,255,255),mascara);
+	//	inRange(img,Scalar(170,0,0),Scalar(176,255,255),mascara);
+	
+	Mat kernel=filtro_promediador(7);
+	mascara=convolve(mascara,kernel);
+	for (int i=0;i<mascara.rows;i++){
+		for (int j=0;j<mascara.cols;j++){
+			if ((int)mascara.at<uchar>(i,j)>150){mascara.at<uchar>(i,j)=255;}
+			else{mascara.at<uchar>(i,j)=0;}
+		}
+	}
+	
+	img.copyTo(segmentacion,mascara);
+	cvtColor(img,img,CV_HSV2BGR);
+	cvtColor(segmentacion,segmentacion,CV_HSV2BGR);
+	
+	//Para obtener los contornos (dilatacion-erosion).
+	Mat EE=getStructuringElement(MORPH_RECT,Size(5,5));
+	Mat contorno=cv::Mat::zeros(img.rows,img.cols,CV_32F);
+	Mat aux1,aux2;
+	dilate(mascara,aux1,EE);
+	erode(mascara,aux2,EE);
+	contorno=aux1-aux2;
+	
+	imshow("Original",img);
+	//	imshow("ROI",roi);
+//	namedWindow("Histograma H",CV_WINDOW_KEEPRATIO);
+//	imshow("Histograma H",canvasH);
+	namedWindow("Mascara",CV_WINDOW_KEEPRATIO);
+	imshow("Mascara",mascara);
+	namedWindow("Segmentacion HSV",CV_WINDOW_KEEPRATIO);
+	imshow("Segmentacion HSV",segmentacion);
+	imshow("Contorno",contorno);
+}
+
+void Ejercicio3_7(){
+	Mat img=imread("Melanoma.jpg",CV_LOAD_IMAGE_GRAYSCALE);
+	
+	imshow("Original",img);
 	waitKey(0);
+}
+
+//encuentra el esqueleto de la imagen img, con tamB (tam elemento estructurante) y tamit(cant que crece)
+void Ejercicio3_8(int tamB,int tamit){
+	Mat img=imread("Cuerpos.jpg",CV_LOAD_IMAGE_GRAYSCALE);
+	vector<Mat> Sk(tamit);
+	Mat unionSk(img.rows,img.cols,img.depth(),Scalar(0));
+	for(int i=0;i<tamit;i++){
+		Mat elem= getStructuringElement(MORPH_RECT,Size(tamB+i,tamB+i));
+		erode(img,Sk[i],elem);
+		Mat aux;
+		morphologyEx(Sk[i],aux,MORPH_OPEN,getStructuringElement(MORPH_RECT,Size(tamB,tamB)));
+		Sk[i]-=aux;
+		bitwise_or(Sk[i],unionSk,unionSk);
+	}
+	Mat EE= getStructuringElement(MORPH_RECT,Size(tamB,tamB));
+	dilate(unionSk,unionSk,EE);
+	imshow("Original",img);
+	imshow("Esqueletos",unionSk);
 }
 
 int main(int argc, char** argv) {
@@ -366,7 +479,11 @@ int main(int argc, char** argv) {
 	
 //	Ejercicio3_5();
 	
-	Ejercicio3_6();
+//	Ejercicio3_6();
+	
+//	Ejercicio3_7();
+
+	Ejercicio3_8(3,5);
 	
 //	Ejercicio3_pico();
 	
