@@ -16,7 +16,7 @@ current_source=main.cpp
 path_char=\
 [source]
 path=main.cpp
-cursor=193:18
+cursor=326:37
 open=true
 [header]
 path=pdi_functions.h

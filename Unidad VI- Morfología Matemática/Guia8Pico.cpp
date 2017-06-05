@@ -124,7 +124,7 @@ Mat Umbral(Mat img,int tol){
 	}
 	return aux;
 }
-void Ejercicio3a(){
+void Ejercicio3_1(){
 	Mat img=imread("Tarjeta.jpeg",IMREAD_GRAYSCALE);
 	Mat res=Umbral(img,100);
 	imshow("Haber..",res);
@@ -155,7 +155,7 @@ void Mostrar(Mat m){
 		}cout<<endl;
 	}
 }
-void Ejercicio3b(){
+void Ejercicio3_2(){
 	Mat img=imread("Caracteres.jpeg",IMREAD_GRAYSCALE);
 	img=Umbral(img,180);
 	imshow("Original",img);
@@ -163,27 +163,178 @@ void Ejercicio3b(){
 	
 	Mat res;
 //	//extrayendo letras
-//	Mat m=getStructuringElement(MORPH_CROSS,Size(3,3),Point(1,1));
-//	Mostrar(m);
-//	erode(img,res,m);
-//	imshow("Morfologia",res);
+	Mat m=getStructuringElement(MORPH_RECT,Size(3,3),Point(2,2));
+	Mostrar(m);
+	erode(img,res,m);
+	dilate(res,res,m);
+	imshow("Letras",res);
 	
 	//extrayendo peques
 	
-	Mat m=getStructuringElement(MORPH_CROSS,Size(2,1));
+	res=img-res;
+
+	imshow("Simpboliyos",res);
+	
+	
+}
+void Ejercicio3_3(){
+	Mat img=imread("estrellas.jpg",IMREAD_GRAYSCALE);
+	imshow("Original",img);
+	img=Umbral(img,100);
+	imshow("Estrellas",img);
+	Mat m=getStructuringElement(MORPH_ELLIPSE,Size(6,6),Point(2,2));
 	Mostrar(m);
+	Mat res;
+	dilate(img,res,m);
+	imshow("Dilatada",res);
 	
-	erode(img,res,m);
 	
-	imshow("Morfoligia",res);
 	
+}
+void Ejercicio3_4(){
+	Mat img=imread("lluviaEstrellas.jpg",IMREAD_GRAYSCALE);
+	img=Umbral(img,100);
+	imshow("Umbralizada",img);
+	int n=10;
+	Mat m=Mat::zeros(n,n,CV_8UC1);
+	for(int i=0;i<n;i++) { m.at<uchar>(i,n-1-i)=1; }
+	Mat res;
+	dilate(img,res,m);
+	Mostrar(m);
+
+	imshow("Resultao",res);
+}
+
+void Ejercicio3_5(){//NO SALIOOOOOOOOOOOOO
+	Mat img=imread("Globulos Rojos.jpg",IMREAD_GRAYSCALE);
+	img=Umbral(img,100);
+	imshow("Umbralizada",img);
+	int n=10;//es cuadrada
+	int rr=4;//es el recuadro
+	Mat m=Mat::zeros(n,n,CV_8UC1);
+	for(int i=0;i<16;i++) { m.at<uchar>((i/rr)+3,(i%rr)+3)=1; }
+	Mat res;
+	dilate(img,res,m);
+	Mostrar(m);
+
+	imshow("Resultao",res);
+}
+int Media(Mat img){
+	int sum=0;
+	for(int i=0;i<img.rows;i++) { for(int j=0;j<img.cols;j++) { sum+=int(img.at<uchar>(i,j)); } }
+	return sum/(img.rows*img.cols);
+}
+void SacarDatos(Mat img,int &m0i, int &m0f,int &m1i, int &m1f,int &m2i, int &m2f   ){
+	vector<Mat>x;
+	split(img,x);
+	int m0=Media(x[0]);
+	int m1=Media(x[1]);
+	int m2=Media(x[2]);
+	int std0=0,std1=0,std2=0;
+	for(int i=0;i<img.rows;i++) { 
+		for(int j=0;j<img.cols;j++) { 
+			std0+=pow((m0-x[0].at<uchar>(i,j)),2);
+			std1+=pow((m1-x[1].at<uchar>(i,j)),2);
+			std2+=pow((m2-x[2].at<uchar>(i,j)),2);
+			
+		}
+	}
+	int nn=img.rows*img.cols;
+	std0=sqrt(std0/nn);
+	std1=sqrt(std1/nn);
+	std2=sqrt(std2/nn);
+	m0i=m0-std0;m1i=m1-std1;m2i=m2-std2;
+	m0f=std0+m0;m1f=std1+m1;m2f=std2+m2;
+	//	cout<<"Esta entre "<<m0-std0<<" y  "<<std0+m0<<endl;
+	//	cout<<"Esta entre "<<m1-std1<<" y  "<<std1+m1<<endl;
+	//	cout<<"Esta entre "<<m2-std2<<" y  "<<std2+m2<<endl;
+	
+	
+}
+Mat MascaraPromediado(int n){
+	///tiene que ser impar N!
+	Mat kern=Mat(n,n,CV_32F);
+	float nn=n*n;
+	for(int i=0;i<n;i++) { 
+		for(int j=0;j<n;j++) { 
+			kern.at<float>(i,j)=(1./nn);
+		}
+	}
+	return kern;
+}
+
+Mat SegmentarPorColor(Mat img, int x, int y, int ancho, int alto,
+					   bool op,int tol0=0, int tol1=0, int tol2=0){
+Mat res;
+	Mat aux=Mat(img,Rect(x,y,ancho,alto));
+	//		imshow("Muestra Del Color",aux);
+	if (op){//en RGB
+		//	Mat RGBimg;cvtColor(img,RGBimg,CV_HSV2RGB);
+		//	Mat RGBaux;cvtColor(aux,RGBaux,CV_HSV2RGB);
+		Mat RGBimg=img.clone();
+		Mat RGBaux=aux.clone();
+		
+		int m0i,m0f,m1i,m1f,m2i,m2f;
+		SacarDatos(RGBaux,m0i,m0f,m1i,m1f,m2i,m2f);
+		
+		Mat segmentado=Mat::zeros(RGBimg.size(),RGBimg.type());
+		inRange(RGBimg,Scalar(m0i-tol0,m1i-tol1,m2i-tol2),Scalar(m0f+tol0,m1f+tol1,m2f+tol2),res);
+		
+//		RGBimg.copyTo(segmentado,RGBaux);
+		
+//		imshow("Segmentada RGB",segmentado);
+		return res;
+	}
+	else {
+		
+		Mat HSVimg;cvtColor(img,HSVimg,CV_RGB2HSV);
+		Mat HSVaux;cvtColor(aux,HSVaux,CV_RGB2HSV);
+		
+		int m0i,m0f,m1i,m1f,m2i,m2f;
+		SacarDatos(HSVaux,m0i,m0f,m1i,m1f,m2i,m2f);
+		
+		Mat segmentado=Mat::zeros(HSVimg.size(),HSVimg.type());
+		inRange(HSVimg,Scalar(m0i-tol0,m1i-tol0,0),Scalar(m0f+tol0,m1f+tol1,255),res);
+		
+		
+//		HSVimg.copyTo(segmentado,HSVaux);
+//		cvtColor(segmentado,segmentado,CV_HSV2RGB);
+//		imshow("Segmentado HSV",segmentado);
+		
+return res;
+	}
+}
+void FuncionMouse(int event, int x, int y, int flags, void* userdata){
+	if  ( event == EVENT_LBUTTONDOWN )//Boton izquierdo
+		cout<<x<<" "<<y<<" ";
+}
+void Ejercicio3_6(){//AHI NOMAS; NO SE TERMINO
+		Mat img=imread("Rio.jpeg");
+		imshow("Original",img);
+//		setMouseCallback("Original",FuncionMouse,NULL);
+//		(519,294)
+		Mat mascara=SegmentarPorColor(img,519,294,10,10,0,15,15,15);
+		mascara=convolve(mascara,MascaraPromediado(5));
+		
+	
+		Mat m=getStructuringElement(MORPH_RECT,Size(10,10));
+		erode(mascara,mascara,m);
+		
+		mascara=convolve(mascara,MascaraPromediado(5));
+		
+		imshow("Mascara",mascara);
 	
 }
 int main(int argc, char** argv) {
 //	Ejercicio1();
 //	Ejercicio2();
-//	Ejercicio3a();
-	Ejercicio3b();
+//	Ejercicio3_1();
+//	Ejercicio3_2();
+//	Ejercicio3_3();
+//	Ejercicio3_3();
+//	Ejercicio3_5();//NO SALIOOOO
+//	Ejercicio3_6();//AHI NOMAS; NO SE TERMINO
+	
 	
 	
 	
