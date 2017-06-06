@@ -178,6 +178,8 @@ void Parcial_Billetes(Mat img){
 			}
 		}
 	}
+	
+	//Con el dilate directamente tapo los huecos
 	Mat EE=getStructuringElement(MORPH_RECT,Size(3,3));
 	dilate(Mascara,Mascara,EE);
 	
@@ -196,7 +198,8 @@ void Parcial_Billetes(Mat img){
 	//Ahora uso la funcion findContours para contar los triangulitos.
 	vector<vector<Point> > contornos;
 	vector<Vec4i> hierarchy;
-	findContours(Mascara, contornos, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+	Mat mask=Mascara.clone();
+	findContours(mask, contornos, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
 	int triangulos=hierarchy.size();
 	switch (triangulos){
 	case 1:
