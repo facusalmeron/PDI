@@ -280,7 +280,7 @@ float Media(Mat img){
 	return media;
 }
 
-float Desvio(Mat img, int Media){
+float Desvio(Mat img, float Media){
 	float desvio=0;
 	for(int i=0;i<img.rows;i++) { 
 		for(int j=0;j<img.cols;j++) { 
@@ -430,12 +430,40 @@ Mat OrdenMediana(Mat img,int tam){ //BUENO PARA RUIDOS IMPULSIVOS SIN DESENFOQUE
 	return img;
 }
 
+Mat OrdenAlfaRecortado(Mat img,int tam,int d){ //UTIL PARA COMBINACIONES DE GAUSSIANO Y SAL & PIMIENTA.
+	img.convertTo(img,CV_32F,1./255);
+	Mat img2=img.clone();
+	int m=tam/2;
+	for(int i=m;i<img.rows-m;i++) { 
+		for(int j=m;j<img.cols-m;j++) { 
+			for(int tt=0;tt<3;tt++){
+				vector<float> aux;
+				for(int k=-m;k<=m;k++) { 
+					for(int l=-m;l<=m;l++) { 
+						aux.push_back(img.at<float>(i+k,j+l));
+					}
+				}
+				sort(aux.begin(),aux.end());
+				aux.resize(aux.size()-d/2);
+				float aux2=0;
+				for(int k=d/2;k<aux.size();k++){ 
+					aux2+=aux[k];
+				}
+				img2.at<float>(i,j)=aux2/(tam*tam-d);
+			}
+		}
+	}
+	img=img2;
+	return img;
+}
+
 void Ejercicio5(){
-	Mat img=imread("iguazu_ruidogris.jpg");
-	
-	Mat filtrada=OrdenMediana(img,5);
+	Mat img=imread("corrientes_ruidogris.jpg");
+	Mat filtrada=OrdenMediana(img,3);
+	Mat filtrada2=OrdenAlfaRecortado(img,3,5);
 	imshow("Original",img);
-	imshow("Limpia",filtrada);
+	imshow("Mediana",filtrada);
+	imshow("Alfa Recortado",filtrada2);
 	waitKey(0);
 }
 
@@ -450,11 +478,11 @@ int main(int argc, char** argv) {
 
 //	Ejercicio2_1();
 	
-	Ejercicio2_2();
+//	Ejercicio2_2();
 	
 //	Ejercicio3();
 	
-//	Ejercicio4();
+	Ejercicio4();
 	
 //	Ejercicio5();
 	waitKey(0);
