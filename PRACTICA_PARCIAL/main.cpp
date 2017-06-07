@@ -5,6 +5,7 @@
 #include <iomanip>
 #include "pdi_functions.h"
 #include "funciones_FS.h"
+#include "utils.h"
 #include <vector>
 #include <opencv2/core/cvdef.h>
 #include <bitset>
@@ -23,6 +24,7 @@ using namespace cv;
 using namespace pdi;
 using namespace std;
 using namespace fs;
+using namespace utils;
 
 void Parcial_Cervezas(Mat img){
 	//Primero saco las transformada Hough para obtener las lineas del vaso.
@@ -235,6 +237,147 @@ void Parcial_Billetes(Mat img){
 	waitKey(0);
 };
 
+void Copa_America(Mat img){
+	Mat fich=imread("CopaAmerica/fich.jpg");
+	Mat unl=imread("CopaAmerica/unl.jpg");
+	Mat sinc=imread("CopaAmerica/sinc.png");
+	Mat aux=img.clone();
+	//Aplico la funcion de transformada de Hough, en lines obtengo el gradiente y lines2 las rectas dibujadas.
+	Mat lines, lines2;
+	int cx=0,cy=0,cy2; //en cx y cy obtengo donde se van a graficar las rectas que le pido (vertical u horizontal).
+	Hough(img,lines,lines2,220,cx,cy,1,0); //vertical
+	Hough(img,lines,lines2,500,cx,cy2,0,1);//horizomntal
+	
+	//Armo un roi distinto de cada logo a insertar, sabiendo las coordenadas x, y por la transformada hough y el tamaño de los logos
+	Mat roifich=img(Rect(cy-67,cx+1,65,65));
+	namedWindow("FICH",CV_WINDOW_KEEPRATIO);
+	imshow("FICH",roifich);
+	
+	vector <Mat> bgrfich; 	
+	split(roifich, bgrfich);
+	
+	Mat auxfich=roifich.clone();
+	Mat mascarafich;
+	
+	float mediafich=Media(bgrfich[0]);
+	float desviofich=Desvio(bgrfich[0],mediafich);
+	float mediafich2=Media(bgrfich[1]);
+	float desviofich2=Desvio(bgrfich[1],mediafich2);
+	float mediafich3=Media(bgrfich[2]);
+	float desviofich3=Desvio(bgrfich[2],mediafich3);
+	inRange(auxfich,Scalar(mediafich-desviofich-10,mediafich2-desviofich2-10,mediafich3-desviofich3-10),Scalar(mediafich+desviofich+10,mediafich2+desviofich2+10,mediafich3+desviofich3+10),mascarafich);
+//	Mat EE=getStructuringElement(MORPH_ELLIPSE,Size(2,2));
+//	dilate(mascarafich,mascarafich,EE);
+//	Mat kernelfich=Filtro_Promediador(3);
+//	mascarafich=convolve(mascarafich,kernelfich);
+//	for (int i=0;i<mascarafich.rows;i++){
+//		for (int j=0;j<mascarafich.cols;j++){
+//			if ((int)mascarafich.at<uchar>(i,j)>190){mascarafich.at<uchar>(i,j)=255;}
+//			else{mascarafich.at<uchar>(i,j)=0;}
+//		}
+//	}
+	
+	for(int i=0;i<roifich.rows;i++) { 
+		for(int j=0;j<roifich.cols;j++) { 
+			if(mascarafich.at<uchar>(i,j)==255){
+				roifich.at<Vec3b>(i,j)[0]=fich.at<Vec3b>(i,j)[0];
+				roifich.at<Vec3b>(i,j)[1]=fich.at<Vec3b>(i,j)[1];
+				roifich.at<Vec3b>(i,j)[2]=fich.at<Vec3b>(i,j)[2];
+			}
+		}
+	}
+	namedWindow("FICHf",CV_WINDOW_KEEPRATIO);
+	imshow("FICHf",roifich);
+	Mat roiunl=img(Rect(cy+2,cx+1,65,65));
+	namedWindow("UNL",CV_WINDOW_KEEPRATIO);
+	imshow("UNL",roiunl);
+
+	vector <Mat> bgrunl; 	
+	split(roiunl, bgrunl);
+	
+	Mat auxunl=roiunl.clone();
+	Mat mascaraunl;
+	
+	float mediaunl=Media(bgrunl[0]);
+	float desviounl=Desvio(bgrunl[0],mediaunl);
+	float mediaunl2=Media(bgrunl[1]);
+	float desviounl2=Desvio(bgrunl[1],mediaunl2);
+	float mediaunl3=Media(bgrunl[2]);
+	float desviounl3=Desvio(bgrunl[2],mediaunl3);
+	inRange(auxunl,Scalar(mediaunl-desviounl-10,mediaunl2-desviounl2-10,mediaunl3-desviounl3-10),Scalar(mediaunl+desviounl+10,mediaunl2+desviounl2+10,mediaunl3+desviounl3+10),mascaraunl);
+//	Mat EEu=getStructuringElement(MORPH_ELLIPSE,Size(2,2));
+//	dilate(mascaraunl,mascaraunl,EEu);
+//		Mat kernelunl=Filtro_Promediador(3);
+//		mascaraunl=convolve(mascaraunl,kernelunl);
+//		for (int i=0;i<mascaraunl.rows;i++){
+//			for (int j=0;j<mascaraunl.cols;j++){
+//				if ((int)mascaraunl.at<uchar>(i,j)>190){mascaraunl.at<uchar>(i,j)=255;}
+//				else{mascaraunl.at<uchar>(i,j)=0;}
+//			}
+//		}
+	
+	for(int i=0;i<roiunl.rows;i++) { 
+		for(int j=0;j<roiunl.cols;j++) { 
+			if(mascaraunl.at<uchar>(i,j)==255){
+				roiunl.at<Vec3b>(i,j)[0]=unl.at<Vec3b>(i,j)[0];
+				roiunl.at<Vec3b>(i,j)[1]=unl.at<Vec3b>(i,j)[1];
+				roiunl.at<Vec3b>(i,j)[2]=unl.at<Vec3b>(i,j)[2];
+			}
+		}
+	}
+	namedWindow("UNLr",CV_WINDOW_KEEPRATIO);
+	imshow("UNLr",roiunl);
+//
+	Mat roisinc=img(Rect(cy-198,img.rows-63,396,58));
+	namedWindow("SINC",CV_WINDOW_KEEPRATIO);
+	imshow("SINC",roisinc);
+//	
+	vector <Mat> bgrsinc; 	
+	split(roisinc, bgrsinc);
+	
+	Mat auxsinc=roisinc.clone();
+	Mat mascarasinc;
+	
+	float mediasinc=Media(bgrsinc[0]);
+	float desviosinc=Desvio(bgrsinc[0],mediasinc);
+	float mediasinc2=Media(bgrsinc[1]);
+	float desviosinc2=Desvio(bgrsinc[1],desviosinc2);
+	float mediasinc3=Media(bgrsinc[2]);
+	float desviosinc3=Desvio(bgrsinc[2],desviosinc3);
+	inRange(auxsinc,Scalar(mediasinc-desviosinc-5,mediasinc2-desviosinc2-5,mediasinc3-desviosinc3-5),Scalar(mediasinc+desviosinc+5,mediasinc2+desviosinc2+5,mediasinc3+desviosinc3+5),mascarasinc);
+	Mat EEs=getStructuringElement(MORPH_CROSS,Size(3,3));
+	erode(mascarasinc,mascarasinc,EEs);
+//		Mat kernelsinc=Filtro_Promediador(3);
+//		mascarasinc=convolve(mascarasinc,kernelsinc);
+//		for (int i=0;i<mascarasinc.rows;i++){
+//			for (int j=0;j<mascarasinc.cols;j++){
+//				if ((int)mascarasinc.at<uchar>(i,j)>190){mascarasinc.at<uchar>(i,j)=255;}
+//				else{mascarasinc.at<uchar>(i,j)=0;}
+//			}
+//		}
+	
+	for(int i=0;i<roisinc.rows;i++) { 
+		for(int j=0;j<roisinc.cols;j++) { 
+			if(mascarasinc.at<uchar>(i,j)==255){
+				roisinc.at<Vec3b>(i,j)[0]=sinc.at<Vec3b>(i,j)[0];
+				roisinc.at<Vec3b>(i,j)[1]=sinc.at<Vec3b>(i,j)[1];
+				roisinc.at<Vec3b>(i,j)[2]=sinc.at<Vec3b>(i,j)[2];
+			}
+		}
+	}
+	
+	namedWindow("SINCr",CV_WINDOW_KEEPRATIO);
+	imshow("SINCr",roisinc);
+	
+	
+	
+	namedWindow("Original",CV_WINDOW_KEEPRATIO);
+	imshow("Original",img);
+	
+	
+	waitKey(0);
+}
+
 int main(int argc, char** argv) {
 	
 	//IMPLEMENTACION DEL PARCIAL DE CERVEZAS:
@@ -247,25 +390,44 @@ int main(int argc, char** argv) {
 //		aux=aux+nombre+".jpg";
 //		Mat img=imread(aux);
 //		Parcial_Cervezas(img);
-//		waitKey(0);
 //	}
 	
 	//IMPLEMENTACION DEL PARCIAL DE LOS BILLETES
-		for(int i=1;i<13;i++) { 
-			string aux="Billetes/";
+//		for(int i=1;i<13;i++) { 
+//			string aux="Billetes/";
+//			string nombre;
+//			stringstream c;
+//			c<<i;
+//			nombre=c.str();
+//			aux=aux+nombre+".jpg";
+//			Mat img=imread(aux);
+//			Parcial_Billetes(img);
+//		}	
+		
+	//IMPLEMENTACION DEL RECUPERATORIO 2016 COPA AMERICA
+		for(int i=1;i<7;i++) { 
+			string aux="CopaAmerica/";
 			string nombre;
 			stringstream c;
 			c<<i;
 			nombre=c.str();
-			aux=aux+nombre+".jpg";
+			aux=aux+nombre+".png";
 			Mat img=imread(aux);
-			Parcial_Billetes(img);
-			waitKey(0);
+			Copa_America(img);
 		}	
-//	Averiguar();
 	
 	
 	
-	waitKey(0);
+//	cv::Mat im=imread("Fut02_3.png"),output,mask,segment,mask_inv,im_hsv,lines,lines2,jugadores,mcolor,jugadores_orig,jugadores_sinc,jugadores_grande,salida;
+//	//Fut01_1,Fut01_3,Fut02_1
+//	cv::Mat fich=imread("fich.jpg"),unl=imread("unl.jpg"),sinc=imread("Logo03.png");
+//	
+//	//view_coordinates(im);//261 225
+//	//segmentator(im,segment,mask,96,132);//15 87
+//	int h1,s1,anc1,al1;
+//	//HOUGH
+//	Huang(im,lines,lines2,220,cx,cy,1,0); //vertical
+//	//std::cout<<cy<<std::endl;
+//	Huang(im,lines,lines2,500,cx,cy2,0,1);//horizomntal
 	return 0;
 } 
