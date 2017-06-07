@@ -561,6 +561,18 @@ namespace fs{
 		vector<Vec3f> circles;
 		
 		/// Apply the Hough Transform to find the circles
+		//Parametros del HoughCircles:
+		//1º imagen de entrada en grises
+		//2º vector de salida de los circulos encontrados, con x,y del centro y r del radio.
+		//3º CV_HOUGH_GRADIENT
+		//4º 1
+		//5º Distancia entre los centros de los circulos encontrados, si es muy pequeño varios circulos pueden ser falsamente detectados
+		//si es muy grande algunos se pueden perder.
+		//6º 
+		//7º 
+		//8º Minimo radio
+		//9º Maximo radio
+		
 		HoughCircles( src_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows/8, 200, 100, 0, 0 );
 		
 		/// Draw the circles detected
@@ -575,7 +587,7 @@ namespace fs{
 		}
 		
 		/// Show your results
-		namedWindow( "Hough Circle Transform Demo", CV_WINDOW_AUTOSIZE );
+		namedWindow( "Hough Circle Transform Demo", CV_WINDOW_KEEPRATIO );
 		imshow( "Hough Circle Transform Demo", src );
 		
 		waitKey(0);

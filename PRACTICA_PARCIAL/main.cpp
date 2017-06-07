@@ -378,6 +378,159 @@ void Copa_America(Mat img){
 	waitKey(0);
 }
 
+void Sopa(Mat img){
+	namedWindow("Original",CV_WINDOW_KEEPRATIO);
+	imshow("Original",img);
+	
+	//Aplico la transformada de hough circular y obtengo el centro del plato
+	Mat gris=img.clone();
+	cvtColor(gris,gris,CV_BGR2GRAY);
+	GaussianBlur( gris, gris, Size(9, 9), 2, 2 );
+	
+	vector<Vec3f> circles;
+	/// Apply the Hough Transform to find the circles
+	HoughCircles( gris, circles, CV_HOUGH_GRADIENT, 2, gris.rows/8, 200, 100, 0, 0 );
+	/// Draw the circles detected
+	for( size_t i = 0; i < circles.size(); i++ )
+	{
+		Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+		int radius = cvRound(circles[i][2]);
+		// circle center
+		circle( gris, center, 3, Scalar(0,255,0), -1, 8, 0 );
+		// circle outline
+		circle( gris, center, radius, Scalar(0,0,255), 3, 8, 0 );
+	}
+	
+	/// Show your results
+//	namedWindow( "Hough Circle Transform Demo", CV_WINDOW_KEEPRATIO );
+//	imshow( "Hough Circle Transform Demo", gris );
+	
+	//DETECTAR TIPO DE SOPA
+	Mat roi=img(Rect(circles[0](0)-20,circles[0](1)-20,40,40));
+//	imshow("ROI",roi);
+	Mat roiaux=roi.clone();
+	cvtColor(roiaux,roiaux,CV_BGR2HSV);
+	vector <Mat> hsv; 	
+	split(roiaux, hsv);
+	float media=Media(hsv[0]);
+	string sopa;
+	if (media>17){
+		sopa="la casa.";
+		cout<<"La sopa es de "<<sopa<<endl;
+	}
+	else{
+		sopa="zapallo.";
+		cout<<"La sopa es de "<<sopa<<endl;
+	}
+	
+	int escena=0;
+	//DETECTAR TOTAL DE MOSCAS EN LA ESCENA
+	Mat aux=img.clone();
+	cvtColor(aux,aux,CV_BGR2GRAY);
+//	namedWindow("Gris",CV_WINDOW_KEEPRATIO);
+//	imshow("Gris",aux);
+	
+	Mat mascara=cv::Mat::zeros(aux.size(),aux.type());
+	for(int i=0;i<aux.rows;i++) { 
+		for(int j=0;j<aux.cols;j++) { 
+			if (aux.at<uchar>(i,j)<10){
+				mascara.at<uchar>(i,j)=255;
+			}
+		}
+	}
+	Mat kernel=Filtro_Promediador(3);
+	mascara=convolve(mascara,kernel);
+	for (int i=0;i<mascara.rows;i++){
+		for (int j=0;j<mascara.cols;j++){
+			if ((int)mascara.at<uchar>(i,j)>220){mascara.at<uchar>(i,j)=255;}
+			else{mascara.at<uchar>(i,j)=0;}
+		}
+	}
+	
+	Mat EE=getStructuringElement(MORPH_RECT,Size(9,9));
+	dilate(mascara,mascara,EE);
+	
+	Mat mascaraaux=mascara.clone();
+	vector<vector<Point> > contornos;
+	vector<Vec4i> hierarchy;
+	findContours(mascara, contornos, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+	escena=hierarchy.size();
+	cout<<"El numero total de moscas en la escena es de: "<<escena<<endl;
+//	namedWindow("Mascara1",CV_WINDOW_KEEPRATIO);
+//	imshow("Mascara1",mascaraaux);
+	
+	
+	//DETECTAR MOSCAS DENTRO DEL PLATO
+	Mat aux2=img.clone();
+	cvtColor(aux2,aux2,CV_BGR2GRAY);
+	
+	Mat mascara2=cv::Mat::zeros(aux2.size(),aux2.type());
+	circle(mascara2, Point(circles[0](0),circles[0](1)), circles[0](2), Scalar(255), -1, 8, 0);
+	for(int i=0;i<aux2.rows;i++) { 
+		for(int j=0;j<aux2.cols;j++) { 
+			if (aux2.at<uchar>(i,j)<10){
+				mascara2.at<uchar>(i,j)=0;
+			}
+		}
+	}
+	Mat kernel2=Filtro_Promediador(3);
+	mascara2=convolve(mascara2,kernel2);
+	for (int i=0;i<mascara2.rows;i++){
+		for (int j=0;j<mascara2.cols;j++){
+			if ((int)mascara2.at<uchar>(i,j)>20){mascara2.at<uchar>(i,j)=255;}
+			else{mascara2.at<uchar>(i,j)=0;}
+		}
+	}
+	//lo hago para invertir y sacar el dilate
+	for(int i=0;i<mascara2.rows;i++) { 
+		for(int j=0;j<mascara2.cols;j++) { 
+			if ((int)mascara2.at<uchar>(i,j)==0){mascara2.at<uchar>(i,j)=255;}
+			else{mascara2.at<uchar>(i,j)=0;} 
+		}
+	}
+////	
+	Mat EE2=getStructuringElement(MORPH_RECT,Size(9,9));
+	dilate(mascara2,mascara2,EE2);
+//	
+	Mat mascaraaux2=mascara2.clone();
+	vector<vector<Point> > contornos2;
+	vector<Vec4i> hierarchy2;
+	findContours(mascara2, contornos2, hierarchy2, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+	int plato=0;
+	plato=hierarchy2.size()-2; //le resto dos porque me cuenta dos contornos de mas que son el plato y el fondo.
+	cout<<"El numero total de moscas en el plato es de: "<<plato<<endl;
+//	namedWindow("Mascara",CV_WINDOW_KEEPRATIO);
+//	imshow("Mascara",mascaraaux2);
+	
+	//VER CUANTAS HAY EN LA SOPA
+	Mat roiaux2=roi.clone();
+	cvtColor(roiaux2,roiaux2,CV_BGR2HSV);
+	vector <Mat> bgr; 	
+	split(roiaux2, bgr);
+	Mat mask;
+	float mediaB=Media(bgr[0]);
+	float desvioB=Desvio(bgr[0],mediaB);
+	float mediaG=Media(bgr[1]);
+	float desvioG=Desvio(bgr[1],mediaG);
+	float mediaR=Media(bgr[2]);
+	float desvioR=Desvio(bgr[2],mediaR);
+	Mat tt=roiaux2.clone();
+	inRange(tt,Scalar(mediaB-desvioB,mediaG-desvioG,mediaR-desvioR),Scalar(mediaB+desvioB,mediaG+desvioG,mediaR+desvioR),mask);
+	Mat EEs=getStructuringElement(MORPH_CROSS,Size(3,3));
+	erode(mask,mask,EEs);
+	//		Mat kernelsinc=Filtro_Promediador(3);
+	//		mascarasinc=convolve(mascarasinc,kernelsinc);
+	//		for (int i=0;i<mascarasinc.rows;i++){
+	//			for (int j=0;j<mascarasinc.cols;j++){
+	//				if ((int)mascarasinc.at<uchar>(i,j)>190){mascarasinc.at<uchar>(i,j)=255;}
+	//				else{mascarasinc.at<uchar>(i,j)=0;}
+	//			}
+	//		}	
+		namedWindow("Mascara",CV_WINDOW_KEEPRATIO);
+		imshow("Mascara",mask);
+	waitKey(0);
+}
+
 int main(int argc, char** argv) {
 	
 	//IMPLEMENTACION DEL PARCIAL DE CERVEZAS:
@@ -405,29 +558,28 @@ int main(int argc, char** argv) {
 //		}	
 		
 	//IMPLEMENTACION DEL RECUPERATORIO 2016 COPA AMERICA
-		for(int i=1;i<7;i++) { 
-			string aux="CopaAmerica/";
+//		for(int i=1;i<7;i++) { 
+//			string aux="CopaAmerica/";
+//			string nombre;
+//			stringstream c;
+//			c<<i;
+//			nombre=c.str();
+//			aux=aux+nombre+".png";
+//			Mat img=imread(aux);
+//			Copa_America(img);
+//		}	
+	
+	//IMPLEMENTACION DEL RECUPERATORIO DEL 2014 SOPA, MOSCAS
+		for(int i=1;i<6;i++) { 
+			string aux="Sopa/";
 			string nombre;
 			stringstream c;
 			c<<i;
 			nombre=c.str();
-			aux=aux+nombre+".png";
+			aux=aux+nombre+".jpg";
 			Mat img=imread(aux);
-			Copa_America(img);
-		}	
+			Sopa(img);
+			}	
 	
-	
-	
-//	cv::Mat im=imread("Fut02_3.png"),output,mask,segment,mask_inv,im_hsv,lines,lines2,jugadores,mcolor,jugadores_orig,jugadores_sinc,jugadores_grande,salida;
-//	//Fut01_1,Fut01_3,Fut02_1
-//	cv::Mat fich=imread("fich.jpg"),unl=imread("unl.jpg"),sinc=imread("Logo03.png");
-//	
-//	//view_coordinates(im);//261 225
-//	//segmentator(im,segment,mask,96,132);//15 87
-//	int h1,s1,anc1,al1;
-//	//HOUGH
-//	Huang(im,lines,lines2,220,cx,cy,1,0); //vertical
-//	//std::cout<<cy<<std::endl;
-//	Huang(im,lines,lines2,500,cx,cy2,0,1);//horizomntal
 	return 0;
 } 
