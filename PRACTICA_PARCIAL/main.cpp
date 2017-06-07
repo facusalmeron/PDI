@@ -501,33 +501,144 @@ void Sopa(Mat img){
 	cout<<"El numero total de moscas en el plato es de: "<<plato<<endl;
 //	namedWindow("Mascara",CV_WINDOW_KEEPRATIO);
 //	imshow("Mascara",mascaraaux2);
+//	cout<<circles[0](2)<<endl;
 	
 	//VER CUANTAS HAY EN LA SOPA
-	Mat roiaux2=roi.clone();
-	cvtColor(roiaux2,roiaux2,CV_BGR2HSV);
-	vector <Mat> bgr; 	
-	split(roiaux2, bgr);
-	Mat mask;
-	float mediaB=Media(bgr[0]);
-	float desvioB=Desvio(bgr[0],mediaB);
-	float mediaG=Media(bgr[1]);
-	float desvioG=Desvio(bgr[1],mediaG);
-	float mediaR=Media(bgr[2]);
-	float desvioR=Desvio(bgr[2],mediaR);
-	Mat tt=roiaux2.clone();
-	inRange(tt,Scalar(mediaB-desvioB,mediaG-desvioG,mediaR-desvioR),Scalar(mediaB+desvioB,mediaG+desvioG,mediaR+desvioR),mask);
-	Mat EEs=getStructuringElement(MORPH_CROSS,Size(3,3));
-	erode(mask,mask,EEs);
-	//		Mat kernelsinc=Filtro_Promediador(3);
-	//		mascarasinc=convolve(mascarasinc,kernelsinc);
-	//		for (int i=0;i<mascarasinc.rows;i++){
-	//			for (int j=0;j<mascarasinc.cols;j++){
-	//				if ((int)mascarasinc.at<uchar>(i,j)>190){mascarasinc.at<uchar>(i,j)=255;}
-	//				else{mascarasinc.at<uchar>(i,j)=0;}
-	//			}
-	//		}	
-		namedWindow("Mascara",CV_WINDOW_KEEPRATIO);
-		imshow("Mascara",mask);
+	Mat aux3=img.clone();
+	cvtColor(aux3,aux3,CV_BGR2GRAY);
+//	for(int i=circles[0](0);i<circles[0](0)+circles[0](2)-120;i++) { 
+//		aux3.at<uchar>(circles[0](1),i)=0;
+//	}
+	Mat mascara3=cv::Mat::zeros(aux3.size(),aux3.type());
+	circle(mascara3, Point(circles[0](0),circles[0](1)), circles[0](2)-120, Scalar(255), -1, 8, 0);
+	for(int i=0;i<aux3.rows;i++) { 
+		for(int j=0;j<aux3.cols;j++) { 
+			if (aux3.at<uchar>(i,j)<10){
+				mascara3.at<uchar>(i,j)=0;
+			}
+		}
+	}
+	Mat kernel3=Filtro_Promediador(3);
+	mascara3=convolve(mascara3,kernel3);
+	for (int i=0;i<mascara3.rows;i++){
+		for (int j=0;j<mascara3.cols;j++){
+			if ((int)mascara3.at<uchar>(i,j)>20){mascara3.at<uchar>(i,j)=255;}
+			else{mascara3.at<uchar>(i,j)=0;}
+		}
+	}
+	//lo hago para invertir y sacar el dilate
+	for(int i=0;i<mascara3.rows;i++) { 
+		for(int j=0;j<mascara3.cols;j++) { 
+			if ((int)mascara3.at<uchar>(i,j)==0){mascara3.at<uchar>(i,j)=255;}
+			else{mascara3.at<uchar>(i,j)=0;} 
+		}
+	}
+	////	
+	Mat EE3=getStructuringElement(MORPH_RECT,Size(9,9));
+	dilate(mascara3,mascara3,EE3);
+	//	
+	Mat mascaraaux3=mascara3.clone();
+	vector<vector<Point> > contornos3;
+	vector<Vec4i> hierarchy3;
+	findContours(mascara3, contornos3, hierarchy3, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+	int sope=0;
+	sope=hierarchy3.size()-2; //le resto dos porque me cuenta dos contornos de mas que son el plato y el fondo.
+	cout<<"El numero total de moscas en la sopa es de: "<<sope<<endl;
+//	namedWindow("lasla",CV_WINDOW_KEEPRATIO);
+//	imshow("lasla",aux3);
+	if ((sopa=="zapallo." && sope<4) || (sopa=="la casa." && sope<5)){
+		cout<<"EL PLATO ESTA BIEN SERVIDO!"<<endl<<endl;
+	}
+	else{
+		cout<<"EL PLATO ESTA MAL SERVIDO!"<<endl<<endl;
+	}
+	waitKey(0);
+}
+
+void Monedas(Mat img){
+	Mat aux=img.clone();
+	cvtColor(aux,aux,CV_BGR2GRAY);
+	Mat mascara=cv::Mat::zeros(aux.size(),aux.type());
+	for(int i=0;i<img.rows;i++) { 
+		for(int j=0;j<img.cols;j++) { 
+			if (aux.at<uchar>(i,j)<230){
+				mascara.at<uchar>(i,j)=255;
+			}
+		}
+	}
+	Mat kernel=Filtro_Promediador(9);
+	mascara=convolve(mascara,kernel);
+	for (int i=0;i<mascara.rows;i++){
+		for (int j=0;j<mascara.cols;j++){
+			if ((int)mascara.at<uchar>(i,j)>150){mascara.at<uchar>(i,j)=255;}
+			else{mascara.at<uchar>(i,j)=0;}
+		}
+	}
+	
+	Mat auxmascara=mascara.clone();
+	vector<vector<Point> > contornos;
+	vector<Vec4i> hierarchy;
+	findContours(auxmascara, contornos, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+	cout<<"El numero total de monedas es de: "<<hierarchy.size()<<endl;
+	float total=0.0;
+	for(int i=0;i<contornos.size();i++) { 
+		float area=contourArea(contornos[i],false);
+		if (area>2800 && area<3000){
+			cout<<"Moneda de 1 centavo"<<endl;
+			total+=0.01;
+		}
+		else{
+			if (area>3800 && area<4000){
+				cout<<"Moneda de 2 centavos"<<endl;
+				total+=0.02;
+			}
+			else{
+				if (area>4200 && area<4400){
+					cout<<"Moneda de 10 centavos"<<endl;
+					total+=0.10;
+				}
+				else{
+					if(area>5000 && area<5200){
+						cout<<"Moneda de 5 centavos"<<endl;
+						total+=0.05;
+					}
+					else{
+						if(area>5400 && area<5600){
+							cout<<"Moneda de 20 centavos"<<endl;
+							total+=0.20;
+						}
+						else{
+							if(area>5900 && area<6100){
+								cout<<"Moneda de 1 euro"<<endl;
+								total+=1.0;
+							}
+							else{
+								if(area>6500 && area<6750){
+									cout<<"Moneda de 50 centavos"<<endl;
+									total+=0.50;
+								}
+								else{
+									if(area>7300 && area<7600){
+										cout<<"Moneda de 2 euros"<<endl;
+										total+=2.0;
+									}
+									else{
+										cout<<"ERROR PAJERO"<<endl;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	cout<<"El total de dinero que hay es de: "<<total<<" euros."<<endl<<endl;
+	namedWindow("Original",CV_WINDOW_KEEPRATIO);
+	imshow("Original",img);
+	
+	namedWindow("Mascara",CV_WINDOW_KEEPRATIO);
+	imshow("Mascara",mascara);
 	waitKey(0);
 }
 
@@ -570,16 +681,28 @@ int main(int argc, char** argv) {
 //		}	
 	
 	//IMPLEMENTACION DEL RECUPERATORIO DEL 2014 SOPA, MOSCAS
-		for(int i=1;i<6;i++) { 
-			string aux="Sopa/";
-			string nombre;
-			stringstream c;
-			c<<i;
-			nombre=c.str();
-			aux=aux+nombre+".jpg";
-			Mat img=imread(aux);
-			Sopa(img);
-			}	
+//		for(int i=1;i<6;i++) { 
+//			string aux="Sopa/";
+//			string nombre;
+//			stringstream c;
+//			c<<i;
+//			nombre=c.str();
+//			aux=aux+nombre+".jpg";
+//			Mat img=imread(aux);
+//			Sopa(img);
+//			}	
+
+	//IMPLEMETACION DEL PARCIAL DE LAS MONEDAS
+	for(int i=1;i<4;i++) { 
+		string aux="Monedas/";
+		string nombre;
+		stringstream c;
+		c<<i;
+		nombre=c.str();
+		aux=aux+nombre+".jpg";
+		Mat img=imread(aux);
+		Monedas(img);
+	}	
 	
 	return 0;
 } 

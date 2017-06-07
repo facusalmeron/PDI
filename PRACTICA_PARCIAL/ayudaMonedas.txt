@@ -1,0 +1,8 @@
+1 centavo - CHICA 2934
+2 centavos - MEDIA 3900.5
+10centavos - MEDIA 4323.5
+5centavos - MEDIA 5109
+20centavos - MEDIA 5547.5
+1euro - GRANDE 6030
+50centavos - GRANDE 6674.5
+2euro - GRANDE 7457
