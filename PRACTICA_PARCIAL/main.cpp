@@ -790,10 +790,11 @@ int main(int argc, char** argv) {
 	
 	Mat img,gradiente,transformada;
 	
-	img=imread("Tenis/1.jpg");
-	info(img);
+	img=imread("snowman.png");
+//	info(img);
 	vector <vector <Point> > pt;
-	HoughComun(img,gradiente,transformada,800,pt);
+	HoughComunAngulos(img,gradiente,transformada,14,50,pt);
+//	HoughComun(img,gradiente,transformada,120,pt);
 	namedWindow("Original",CV_WINDOW_KEEPRATIO);
 	imshow("Original",img);
 	namedWindow("Gradiente",CV_WINDOW_KEEPRATIO);
