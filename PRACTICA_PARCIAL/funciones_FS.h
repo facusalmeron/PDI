@@ -627,20 +627,19 @@ namespace fs{
 				line( transformada, pt1, pt2, Scalar(0,0,255), 3, CV_AA);
 				pt.push_back(ptt);
 			}
-//			for(int i=0;i<lines.size();i++) { 
-//				cout<<lines[i]<<endl;
-//			}
+			for(int i=0;i<lines.size();i++) { 
+				cout<<lines[i]<<endl;
+			}
 		}
 		
 		void RecorrerVectorVectoresPoint(vector <vector <Point> > pt){
 			for(int i=0;i<pt.size();i++) { 
 				vector <Point> aux;
 				aux=pt[i];
-				for(int i=0;i<aux.size();i++) { 
-					Point p1=aux[0];
-					Point p2=aux[1];
-					cout<<"PUNTO 1: X: "<<p1.x<<" Y: "<<p1.y<<" - PUNTO 2: X: "<<p2.x<<" Y: "<<p2.y<<endl;
-				}
+				cout<<"LINEA "<<i;
+				Point p1=aux[0];
+				Point p2=aux[1];
+				cout<<" PUNTO 1: X: "<<p1.x<<" Y: "<<p1.y<<" - PUNTO 2: X: "<<p2.x<<" Y: "<<p2.y<<endl;
 			}
 		}
 	
