@@ -593,6 +593,56 @@ namespace fs{
 		waitKey(0);
 		}
 	
+		void HoughComun(Mat img, Mat &Gradiente, Mat &transformada, int tamaniolineas, vector <vector <Point> > &pt ){
+			cvtColor(img,img,CV_BGR2GRAY);
+			Canny(img,Gradiente,50,200,3); //Detecto los bordes de la imagen
+//			imshow("Original",img);
+//			imshow("Bordes",Gradiente);
+			vector<Vec2f> lines;
+			cvtColor(Gradiente, transformada, CV_GRAY2BGR);
+			//HoughLines parámetros:
+			//1º Salida del detector del borde.
+			//2º Vector que almacenara los parametros ro, theta de las lineas detectadas.
+			//3º La resolucion de ro en pixeles, usamos 1 pixel
+			//4º La resolucion del parametro theta en radianes utilizamos un grado (CV_PI/180)
+			//5º Umbral numero minimo de intersecciones para detectar una linea, a mayor umbral lineas mas largas.
+			//6º y 7º parametros por defecto en 0
+			//	HoughLines(Gradiente, lines, 1, CV_PI/180, 50, 0, 0 ); //Parametros para "letras1.tif"
+			HoughLines(Gradiente, lines, 1, CV_PI/180, tamaniolineas, 0, 0 ); //Parametros para "snowman.png"
+//			cout<<lines.size()<<endl;
+			
+			for( size_t i = 0; i < lines.size(); i++ )
+			{
+				float ro = lines[i][0], theta = lines[i][1];
+				Point pt1, pt2;
+				vector <Point> ptt;
+				double a = cos(theta), b = sin(theta);
+				double x0 = a*ro, y0 = b*ro;
+				pt1.x = cvRound(x0 + 1000*(-b));
+				pt1.y = cvRound(y0 + 1000*(a));
+				pt2.x = cvRound(x0 - 1000*(-b));
+				pt2.y = cvRound(y0 - 1000*(a));
+				ptt.push_back(pt1);
+				ptt.push_back(pt2);
+				line( transformada, pt1, pt2, Scalar(0,0,255), 3, CV_AA);
+				pt.push_back(ptt);
+			}
+//			for(int i=0;i<lines.size();i++) { 
+//				cout<<lines[i]<<endl;
+//			}
+		}
+		
+		void RecorrerVectorVectoresPoint(vector <vector <Point> > pt){
+			for(int i=0;i<pt.size();i++) { 
+				vector <Point> aux;
+				aux=pt[i];
+				for(int i=0;i<aux.size();i++) { 
+					Point p1=aux[0];
+					Point p2=aux[1];
+					cout<<"PUNTO 1: X: "<<p1.x<<" Y: "<<p1.y<<" - PUNTO 2: X: "<<p2.x<<" Y: "<<p2.y<<endl;
+				}
+			}
+		}
 	
 };
 

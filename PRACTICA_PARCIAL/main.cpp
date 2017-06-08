@@ -702,7 +702,7 @@ void Escaner(Mat img){
 		angulo=atan(division)*180/M_PI;
 		aux=rotate(aux,angulo);
 	}
-	cout<<"Cantidad filas:"<<espectro.rows/2<<" Cantidad columnas:"<<espectro.cols/2<<endl<<" I:"<<ii<<" J:"<<jj<<" Angulo:"<<angulo<<endl;
+//	cout<<"Cantidad filas:"<<espectro.rows/2<<" Cantidad columnas:"<<espectro.cols/2<<endl<<" I:"<<ii<<" J:"<<jj<<" Angulo:"<<angulo<<endl;
 //	info(umbral);
 	namedWindow("Umbral",CV_WINDOW_KEEPRATIO);
 	imshow("Umbral",umbral);
@@ -777,16 +777,33 @@ int main(int argc, char** argv) {
 //	}	
 	
 	//IMPLEMENTACION DEL PARCIAL DEL ESCANER
-	for(int i=1;i<11;i++) { 
-		string aux="Escaner/";
-		string nombre;
-		stringstream c;
-		c<<i;
-		nombre=c.str();
-		aux=aux+nombre+".png";
-		Mat img=imread(aux);
-		Escaner(img);
-	}	
+//	for(int i=1;i<11;i++) { 
+//		string aux="Escaner/";
+//		string nombre;
+//		stringstream c;
+//		c<<i;
+//		nombre=c.str();
+//		aux=aux+nombre+".png";
+//		Mat img=imread(aux);
+//		Escaner(img);
+//	}	
 	
+	Mat img,gradiente,transformada;
+	
+	img=imread("Tenis/1.jpg");
+	info(img);
+	vector <vector <Point> > pt;
+	HoughComun(img,gradiente,transformada,800,pt);
+	namedWindow("Original",CV_WINDOW_KEEPRATIO);
+	imshow("Original",img);
+	namedWindow("Gradiente",CV_WINDOW_KEEPRATIO);
+	imshow("Gradiente",gradiente);
+	namedWindow("Transformada",CV_WINDOW_KEEPRATIO);
+	imshow("Transformada",transformada);
+	
+	RecorrerVectorVectoresPoint(pt);
+	
+	
+	waitKey(0);
 	return 0;
 } 
