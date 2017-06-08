@@ -187,15 +187,15 @@ void Parcial_Billetes(Mat img){
 	
 //	
 //	//Filtro para sacar los huecos y vuelvo a binarizar
-//	Mat kernel=Filtro_Promediador(3);
-//	Mascara=convolve(Mascara,kernel);
-//	for(int i=0;i<roi.rows;i++) { 
-//		for(int j=0;j<roi.cols;j++) { 
-//			if (Mascara.at<uchar>(i,j)<70){
-//				Mascara.at<uchar>(i,j)=0;
-//			}
-//		}
-//	}
+////	Mat kernel=Filtro_Promediador(3);
+////	Mascara=convolve(Mascara,kernel);
+////	for(int i=0;i<roi.rows;i++) { 
+////		for(int j=0;j<roi.cols;j++) { 
+////			if (Mascara.at<uchar>(i,j)<70){
+////				Mascara.at<uchar>(i,j)=0;
+////			}
+////		}
+////	}
 	
 	//Ahora uso la funcion findContours para contar los triangulitos.
 	vector<vector<Point> > contornos;
@@ -642,6 +642,78 @@ void Monedas(Mat img){
 	waitKey(0);
 }
 
+void Escaner(Mat img){
+	cvtColor(img,img,CV_BGR2GRAY);
+	img.convertTo(img,CV_32F,1./255);
+	Mat espectro=spectrum(img);
+	
+	namedWindow("Original",CV_WINDOW_KEEPRATIO);
+	imshow("Original",img);
+	namedWindow("Espectro",CV_WINDOW_KEEPRATIO);
+	imshow("Espectro",espectro);
+	
+	Mat umbral(espectro.size(),espectro.type());
+	for(int i=0;i<espectro.rows;i++) { 
+		for(int j=0;j<espectro.cols;j++) { 
+			if (espectro.at<float>(i,j)> 130/255.0){
+				umbral.at<float>(i,j)=1;
+			}
+			else umbral.at<float>(i,j)=0;
+		}
+	}
+	Mat kernel=Filtro_Promediador(5);
+	umbral=convolve(umbral,kernel);
+	for(int i=0;i<umbral.rows;i++) { 
+		for(int j=0;j<umbral.cols;j++) { 
+			if (umbral.at<float>(i,j)>80/255.0){
+				umbral.at<float>(i,j)=1;
+			}
+			else{
+				umbral.at<float>(i,j)=0;
+			}
+		}
+	}
+	
+	int ii=0;
+	int jj=0;
+	for(int i=0;i<umbral.rows;i++) { 
+		for(int j=0;j<umbral.cols;j++) { 
+			if (umbral.at<float>(i,j)==1 && ii==0 && jj==0){
+				ii=i;
+				jj=j;
+			}
+			
+		}
+	}
+	double angulo;
+	Mat aux=img.clone();
+	if (jj<(int)umbral.cols/2){
+		double a=abs(umbral.cols/2-jj);
+		double b=abs(umbral.rows/2-ii);
+		double division=a/b;
+		angulo=atan(division)*180/M_PI;
+		angulo=atan(division)*180/M_PI;
+		aux=rotate(aux,-angulo);
+	}
+	else{
+		double a=abs(jj-umbral.cols/2);
+		double b=abs(umbral.rows/2-ii);
+		double division=a/b;
+		angulo=atan(division)*180/M_PI;
+		aux=rotate(aux,angulo);
+	}
+	cout<<"Cantidad filas:"<<espectro.rows/2<<" Cantidad columnas:"<<espectro.cols/2<<endl<<" I:"<<ii<<" J:"<<jj<<" Angulo:"<<angulo<<endl;
+//	info(umbral);
+	namedWindow("Umbral",CV_WINDOW_KEEPRATIO);
+	imshow("Umbral",umbral);
+
+	cout<<"Se roto "<<angulo<<endl;
+	
+	namedWindow("Rotado",CV_WINDOW_KEEPRATIO);
+	imshow("Rotado",aux);
+	waitKey(0);
+}
+
 int main(int argc, char** argv) {
 	
 	//IMPLEMENTACION DEL PARCIAL DE CERVEZAS:
@@ -693,15 +765,27 @@ int main(int argc, char** argv) {
 //			}	
 
 	//IMPLEMETACION DEL PARCIAL DE LAS MONEDAS
-	for(int i=1;i<4;i++) { 
-		string aux="Monedas/";
+//	for(int i=1;i<4;i++) { 
+//		string aux="Monedas/";
+//		string nombre;
+//		stringstream c;
+//		c<<i;
+//		nombre=c.str();
+//		aux=aux+nombre+".jpg";
+//		Mat img=imread(aux);
+//		Monedas(img);
+//	}	
+	
+	//IMPLEMENTACION DEL PARCIAL DEL ESCANER
+	for(int i=1;i<11;i++) { 
+		string aux="Escaner/";
 		string nombre;
 		stringstream c;
 		c<<i;
 		nombre=c.str();
-		aux=aux+nombre+".jpg";
+		aux=aux+nombre+".png";
 		Mat img=imread(aux);
-		Monedas(img);
+		Escaner(img);
 	}	
 	
 	return 0;
